@@ -10,33 +10,32 @@
               <a-dropdown >
                 <a-menu slot="overlay"  @click="handleMenuClick">
                   <a-menu-item key="addUser"> <a-icon type="user"/>添加好友</a-menu-item>
-                  <a-menu-item key="addGroup"> <a-icon type="user"/>创建群聊</a-menu-item>
+                  <a-menu-item key="addGroup"><a-icon type="usergroup-add" />创建群聊</a-menu-item>
                 </a-menu>
                 <a-button size="small" style="background-color: rgb(226, 226, 226);margin-left: 10px" icon="plus"/>
               </a-dropdown>
             </span>
       </a-col>
-      <a-col style="background-color: rgb(228, 228, 229);height: 800px;display: block;">
-        <div v-if="search.length === 0"  style="width: 300px;background-color: rgb(232, 231, 230);margin-bottom: 7px" v-for="item in chatList">
+      <a-col class="chat-list" style="background-color: rgb(228, 228, 229);max-height: 650px;display: block;">
+        <div v-if="search.length === 0" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in 19">
           <a-space align="center">
-            center
-            <a-button type="primary">Primary</a-button>
-            <span class="mock-block">Block</span>
+            <a-badge :count="77"><a-avatar :size="45" shape="square" src="https://lchat-server.oss-cn-shenzhen.aliyuncs.com/avatar/default/avatar.jpg" /></a-badge>
+            <a-space direction="vertical" style="margin-left: 7px">
+              <a-space><span><b style="font-size: 14px">Block</b></span><span style="float: left;font-size: 10px">21/9/11</span></a-space>
+              <span>哈哈哈哈{{item}}</span>
+            </a-space>
           </a-space>
         </div>
         <!-- 搜索用户时的列表-->
-        <a-card v-if="search.length > 0">
-          <a-card hoverable style="width: 300px;background-color: rgb(232, 231, 230);margin-top: 7px" v-for="item in searchList">
-            <div style="margin: 7px 7px">
-              <span>
-                <a-avatar :size="50" shape="square" slot="avatar" :src=item.avatar />
-              </span>
-              <span style="margin-left: 10px;font-size: 17px">
-                {{item.name}}
-              </span>
-            </div>
-          </a-card>
-        </a-card>
+        <div v-if="search.length > 0" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in searchList">
+          <a-space align="center">
+            <a-badge :count="77"><a-avatar :size="45" shape="square" :src=item.avatar /></a-badge>
+            <a-space direction="vertical" style="margin-left: 7px">
+              <a-space><span><b style="font-size: 14px">Block</b></span><span style="float: left;font-size: 10px">21/9/11</span></a-space>
+              <span>{{item.name}}</span>
+            </a-space>
+          </a-space>
+        </div>
       </a-col>
     </a-row>
     <a-divider type="vertical"/>
@@ -109,6 +108,11 @@ export default {
       search: ''
     }
   },
+  watch:{
+    userSearch(val,oldVal){
+
+    }
+  },
   methods: {
     getCurrentList() {
       let db = this.$store.getters.getDB
@@ -120,6 +124,9 @@ export default {
     searchUser(){
       console.log(this.userSearch)
       let key =  this.userSearch.trim()
+      if (key.length === 0){
+        this.userList = []
+      }
       if (key.length > 0){
         user.search(this.userSearch).then((response) => {
           if (response.data.code === 200){
@@ -139,5 +146,10 @@ export default {
 </script>
 
 <style scoped>
-
+.chat-list{
+  overflow-y: hidden;
+}
+.chat-list:hover{
+  overflow-y: auto;
+}
 </style>

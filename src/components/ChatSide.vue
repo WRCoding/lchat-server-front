@@ -196,10 +196,7 @@ export default {
       this.isEditName = true
     },
     logout() {
-      this.socket.on( 'close', (data) => {
-        console.log('close : ',data.toString())
-      })
-      ipcRenderer.send('logout', '退出登录')
+      ipcRenderer.send('logout', this.userInfo.id)
       ipcRenderer.on('successLogout', (() => {
         this.$router.push('/')
         this.$store.commit('deleteInfo')

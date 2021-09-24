@@ -25,6 +25,10 @@ function createConnect(message){
     console.log(buffer.toString());
     win.webContents.send('receive',buffer.toString())
   });
+
+  socket.on('end',() => {
+    console.log('disconnected from server');
+  })
 }
 
 function createWindow() {
@@ -70,6 +74,8 @@ ipcMain.on('logout',(event,arg) => {
   win.setMaximumSize(500,300)
   win.setSize(500,300)
   win.center()
+  const data = {'msgSeq': new Date().getTime(), 'from': arg, 'to': 'server','msgType': 'QUIT'};
+  socket.end(JSON.stringify(data))
   event.sender.send('successLogout','to index')
 })
 ipcMain.on('sendMsg',(event,arg) => {

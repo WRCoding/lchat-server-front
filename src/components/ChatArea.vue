@@ -1,7 +1,11 @@
 <template>
     <!--聊天区域-->
     <a-col flex="auto" style="background-color: rgb(245, 245, 245)">
-      <a-row>
+      <a-row style="top: 35%" v-if="!click">
+        <a-empty :description="false">
+        </a-empty>
+      </a-row>
+      <a-row v-if="click">
         <a-col
             style="background-color: rgb(247, 247, 247);height: 50px;display: block;border-bottom: 1px solid rgb(214,214,214)">
           <span style="font-size: 25px;margin-left: 40px"><b>林北</b></span>
@@ -99,7 +103,7 @@
 </template>
 
 <script>
-// import {Socket} from '../js/socket'
+import {eventBus} from '../main'
 import { ipcRenderer } from 'electron'
 
 export default {
@@ -111,7 +115,7 @@ export default {
       tip: false, // tooltip是否显示
       openCard: false,
       chat: '',
-
+      click: false,
       userInfo: {},
       dbFile: '',
       // socket: new Socket(),
@@ -122,6 +126,10 @@ export default {
     this.init()
     ipcRenderer.on('receive',(event,arg) => {
       console.log(arg)
+    })
+    eventBus.$on('click', (data) => {
+      console.log(data)
+      this.click = true
     })
   },
   methods: {

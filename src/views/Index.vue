@@ -23,38 +23,6 @@ export default {
 </script>
 
 <style scoped>
-
-::-webkit-scrollbar {
-
-  width: 9px;
-
-  height: 9px;
-
-}
-
-::-webkit-scrollbar-track-piece {
-
-  background-color: rgb(245, 245, 245);
-
-}
-
-::-webkit-scrollbar-thumb {
-
-  background-color: #dddddd;
-
-  background-clip: padding-box;
-
-  min-height: 10px;
-
-  border-radius: 3px;
-
-}
-
-
-
-
-
-
 .ant-popover-placement-leftTop > .ant-popover-content > .ant-popover-inner {
   background-color: rgb(152, 225, 101);
 }

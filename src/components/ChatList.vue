@@ -16,8 +16,8 @@
               </a-dropdown>
             </span>
       </a-col>
-      <a-col class="chat-list" style="background-color: rgb(228, 228, 229);max-height: 650px;display: block;">
-        <div v-if="search.length === 0" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in 19">
+      <a-col class="chat-list" style="background-color: rgb(228, 228, 229);max-height: 650px;display: block;cursor: pointer">
+        <div v-if="search.length === 0" class="chat-list-card" @click="toChat()" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in 19">
           <a-space align="center">
             <a-badge :count="77"><a-avatar :size="45" shape="square" src="https://lchat-server.oss-cn-shenzhen.aliyuncs.com/avatar/default/avatar.jpg" /></a-badge>
             <a-space direction="vertical" style="margin-left: 7px">
@@ -69,6 +69,7 @@
 </template>
 
 <script>
+import {eventBus} from '../main'
 import user from '../js/user'
 export default {
   name: "chat-list",
@@ -114,6 +115,9 @@ export default {
     }
   },
   methods: {
+    toChat(){
+      eventBus.$emit('click', '妈妈说，该做作业了！(^_^)!!!')
+    },
     getCurrentList() {
       let db = this.$store.getters.getDB
       let sql = 'create table if not exists lchat_list()'

@@ -51,7 +51,7 @@
       <a-card style="margin-top: 7px;overflow-y: auto;max-height: 430px" >
         <a-list item-layout="horizontal" :data-source="userList">
           <a-list-item slot="renderItem" slot-scope="item, index">
-            <a slot="actions"><a-icon type="user-add" /></a>
+            <a slot="actions" @click="addFriend(item.id)"><a-icon type="user-add" /></a>
             <a-list-item-meta
                 :description=item.description
             >
@@ -70,7 +70,10 @@
 
 <script>
 import {eventBus} from '../main'
+import { ipcRenderer } from 'electron'
 import user from '../js/user'
+import friend from '../js/friend'
+import {sqliteDB} from '../js/db'
 export default {
   name: "chat-list",
   data() {
@@ -109,14 +112,41 @@ export default {
       search: ''
     }
   },
+  created() {
+    this.queryV()
+  },
+  mounted() {
+
+  },
   watch:{
     userSearch(val,oldVal){
 
     }
   },
   methods: {
+    queryV(){
+      let currentId = this.$store.getters.getInfo.id
+      let db = this.$store.getters.getDB
+      let friends = []
+      friend.getFriends(currentId).then(response => {
+        let data = response.data.data
+        for (let i = 0; i<data.length; i++){
+          friends.push([data[i].id,data[i].userName,data[i].avatar,data[i].background,data[i].description])
+        }
+        console.log(friends)
+      })
+      ipcRenderer.send('query','friends')
+    },
     toChat(){
       eventBus.$emit('click', '妈妈说，该做作业了！(^_^)!!!')
+    },
+    addFriend(id){
+      let currentId = this.$store.getters.getInfo.id
+      let data = {'userId':currentId,'friendId':id}
+      console.log('currentId: '+currentId+' , id: '+id)
+      friend.addFriend(JSON.stringify(data)).then(response => {
+        console.log(response)
+      })
     },
     getCurrentList() {
       let db = this.$store.getters.getDB

@@ -57,8 +57,24 @@ export default {
       this.password = ''
     },
     createDB(userInfo) {
-      let dbFile = userInfo.id + '.db'
+      let dbFile = userInfo.userName + '.db'
       let db = new sqliteDB(dbFile)
+      let sql = `
+            CREATE TABLE IF NOT EXISTS "lchat_friend" (
+              "userid" text NOT NULL,
+              "username" blob,
+              "avatar" text,
+              "background" text,
+              "description" text,
+              PRIMARY KEY ("userid")
+            );
+      `
+      db.createTable(sql)
+      var s = 'select * from lchat_friend'
+      db.queryData(s,((data) => {
+        console.log('data: '+data)
+      }))
+      db.close()
       this.$store.commit('setDB',db)
     }
   }

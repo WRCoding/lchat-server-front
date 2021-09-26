@@ -1,5 +1,6 @@
 import { app, protocol, BrowserWindow,Menu ,ipcMain,dialog} from 'electron'
 import net from 'net'
+import {sqliteDB} from './js/db'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
@@ -60,14 +61,25 @@ function createWindow() {
     // win.loadURL('app://./index.html')
   }
 }
+function query(){
+  var db = new sqliteDB('D:\\Code\\LChat\\demo\\xw.db');
+  var sql = 'select * from lchat_friend'
+  db.queryData(sql,((data) => {
+    console.log(data)
+  }))
+}
 ipcMain.on('login',(event,arg) => {
   console.log(arg)
   createConnect(arg.toString())
   // win.setPosition(10,10)
   win.setMaximumSize(1250,735)
   win.setSize(1280,735)
+  query()
   win.center()
   win.webContents.send('success','client')
+})
+ipcMain.on('query',(event,arg) => {
+  console.log('query: '+arg)
 })
 ipcMain.on('logout',(event,arg) => {
   console.log(arg)

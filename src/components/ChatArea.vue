@@ -135,11 +135,7 @@ export default {
   methods: {
     init(){
       this.userInfo = this.$store.getters.getInfo
-      console.log('userInfo : ',this.userInfo)
-      this.dbFile = this.userInfo.id + '.db'
-      console.log('dbFile : ',this.dbFile)
       this.db = this.$store.getters.getDB
-      console.log('db : ',this.db)
     },
     showCard() {
       this.openCard = true

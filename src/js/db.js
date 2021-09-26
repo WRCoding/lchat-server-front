@@ -1,7 +1,7 @@
 const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
 
-const db = db || {};
+const db =  {};
 
 db.sqliteDB = function (file){
     db.database = new sqlite3.Database(file)
@@ -18,15 +18,12 @@ db.printErrorInfo = function (err){
     console.log("Error message: " + err)
 }
 
-db.sqliteDB.prototype.createTable =  (sql,callback) => {
+db.sqliteDB.prototype.createTable =  (sql) => {
     db.database.serialize(() => {
-        db.database.run(sql,(err,rows) => {
+        db.database.run(sql,(err) => {
             if (null != err){
                 db.printErrorInfo(err)
                 return;
-            }
-            if (callback){
-                callback(rows)
             }
         })
     })
@@ -43,14 +40,16 @@ db.sqliteDB.prototype.insertData = (sql, object) => {
 }
 
 db.sqliteDB.prototype.queryData = (sql, callback) => {
-    db.database.all(sql, (err, rows) => {
-        if (null != err){
-            db.printErrorInfo(err)
-            return
-        }
-        if (callback){
-            callback(rows)
-        }
+    db.database.serialize(() => {
+        db.database.all(sql, (err, rows) => {
+            if (null != err){
+                db.printErrorInfo(err)
+                return
+            }
+            if (callback){
+                callback(rows)
+            }
+        })
     })
 }
 

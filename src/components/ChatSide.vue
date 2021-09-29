@@ -1,9 +1,11 @@
 <template>
     <a-col flex="64px" style="background-color: rgb(46, 46, 46)">
-      <a-avatar shape="square" :size="40" :src="userInfo.avatar"
-                style="margin-top: 30px;margin-left: 10px" @click="showUserInfo()"/>
-      <a-button type="link" ghost icon="message" style="font-size: 25px;margin-left: 10px;margin-top: 7px"/>
-      <a-button type="link" ghost icon="user" style="font-size: 25px;margin-left: 10px;margin-top: 7px"/>
+      <a-space direction="vertical" align="center">
+        <a-avatar shape="square" :size="40" :src="userInfo.avatar"
+                  style="margin-top: 30px;margin-left: 10px" @click="showUserInfo()"/>
+        <a-icon type="message" class="action-side" v-bind:class="{'action-click': changeAction === 1,'action-former': changeAction !==1}" @click="actionChange(1)"/>
+        <a-icon type="user" class="action-side" v-bind:class="{'action-click': changeAction === 2,'action-former': changeAction !==2}" @click="actionChange(2)"/>
+      </a-space>
       <!--个人信息-->
       <a-drawer
           placement="right"
@@ -97,6 +99,7 @@
 </template>
 
 <script>
+import {eventBus} from '../main'
 import user from "../js/user";
 import {ipcRenderer} from "electron";
 export default {
@@ -112,13 +115,19 @@ export default {
       openModel: false,
       flag: true, //判断modal的圆角是background还是avatar,true为background
       imageUrl: '',
-      userInfo: {}
+      userInfo: {},
+      changeAction: 0,
     }
   },
   created() {
     this.userInfo = this.$store.getters.getInfo
   },
   methods: {
+    actionChange(val){
+      console.log(val)
+      this.changeAction = val
+      eventBus.$emit('changeAction', this.changeAction)
+    },
     showUserInfo() {
       console.log(this.$store.state.userInfo)
       this.userInfo = this.$store.state.userInfo
@@ -231,5 +240,19 @@ export default {
   cursor: pointer;
   margin-left: 24%;
   color: rgb(255, 77, 79)
+}
+.action-side{
+  cursor: pointer;
+  font-size: 25px;
+  margin-top: 17px
+}
+.action-side:hover{
+  color: rgb(7, 193, 96) ;
+}
+.action-click{
+  color: rgb(7, 193, 96);
+}
+.action-former{
+  color: rgb(144, 144, 144);
 }
 </style>

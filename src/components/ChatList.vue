@@ -10,19 +10,19 @@
               <a-dropdown >
                 <a-menu slot="overlay"  @click="handleMenuClick">
                   <a-menu-item key="addUser"> <a-icon type="user"/>添加好友</a-menu-item>
-                  <a-menu-item key="addGroup"><a-icon type="usergroup-add" />创建群聊</a-menu-item>
+                  <a-menu-item key="addGroup"><a-icon type="team" />创建群聊</a-menu-item>
                 </a-menu>
                 <a-button size="small" style="background-color: rgb(226, 226, 226);margin-left: 10px" icon="plus"/>
               </a-dropdown>
             </span>
       </a-col>
-      <a-col class="chat-list" style="background-color: rgb(228, 228, 229);max-height: 650px;display: block;cursor: pointer">
-        <div v-if="search.length === 0" class="chat-list-card" @click="toChat()" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in 19">
+      <a-col class="chat-list" style="background-color: rgb(228, 228, 229);height:650px;max-height: 650px;display: block;cursor: pointer">
+        <div v-if="search.length === 0" class="chat-list-card" @click="toChat()" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in chatList">
           <a-space align="center">
-            <a-badge :count="77"><a-avatar :size="45" shape="square" src="https://lchat-server.oss-cn-shenzhen.aliyuncs.com/avatar/default/avatar.jpg" /></a-badge>
+            <a-badge :count="77"><a-avatar :size="45" shape="square" :src="item.avatar" /></a-badge>
             <a-space direction="vertical" style="margin-left: 7px">
-              <a-space><span><b style="font-size: 14px">Block</b></span><span style="float: left;font-size: 10px">21/9/11</span></a-space>
-              <span>哈哈哈哈{{item}}</span>
+              <a-space><span><b style="font-size: 14px">{{item.username}}</b></span><span style="float: left;font-size: 10px">21/9/11</span></a-space>
+              <span>1234456</span>
             </a-space>
           </a-space>
         </div>
@@ -73,7 +73,6 @@ import {eventBus} from '../main'
 import { ipcRenderer } from 'electron'
 import user from '../js/user'
 import friend from '../js/friend'
-import {sqliteDB} from '../js/db'
 export default {
   name: "chat-list",
   data() {
@@ -81,39 +80,17 @@ export default {
       visible: false,
       userList: [],
       userSearch: '',
-      chatList: [
-        {
-          name: '林北',
-          time: '21/9/12',
-          desc: '哈哈哈哈Electron',
-          avatar: 'https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg'
-        }
-      ],
-      searchList: [
-        {
-          name: '林北',
-          time: '21/9/12',
-          desc: '哈哈哈哈Electron',
-          avatar: 'https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg'
-        },
-        {
-          name: '林北',
-          time: '21/9/12',
-          desc: '哈哈哈哈Electron',
-          avatar: 'https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg'
-        },
-        {
-          name: '林北',
-          time: '21/9/12',
-          desc: '哈哈哈哈Electron',
-          avatar: 'https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg'
-        }
-      ],
+      chatList: [],
+      searchList: [],
       search: ''
     }
   },
   created() {
-    this.queryV()
+    this.queryFriends()
+    ipcRenderer.on('friendsInfo',((event, args) => {
+      this.chatList = args
+      console.log('chatList: ',this.chatList)
+    }))
   },
   mounted() {
 
@@ -124,18 +101,18 @@ export default {
     }
   },
   methods: {
-    queryV(){
+    queryFriends(){
       let currentId = this.$store.getters.getInfo.id
       let db = this.$store.getters.getDB
-      let friends = []
+      const friends = [];
       friend.getFriends(currentId).then(response => {
         let data = response.data.data
         for (let i = 0; i<data.length; i++){
-          friends.push([data[i].id,data[i].userName,data[i].avatar,data[i].background,data[i].description])
+          let friend = [data[i].id,data[i].userName,data[i].avatar,data[i].background,data[i].description]
+          friends.push(friend)
         }
-        console.log(friends)
+        ipcRenderer.send('query',friends)
       })
-      ipcRenderer.send('query','friends')
     },
     toChat(){
       eventBus.$emit('click', '妈妈说，该做作业了！(^_^)!!!')
@@ -147,10 +124,6 @@ export default {
       friend.addFriend(JSON.stringify(data)).then(response => {
         console.log(response)
       })
-    },
-    getCurrentList() {
-      let db = this.$store.getters.getDB
-      let sql = 'create table if not exists lchat_list()'
     },
     searchValue(e){
       console.log(this.search)

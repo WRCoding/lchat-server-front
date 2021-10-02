@@ -61,25 +61,24 @@ function createWindow() {
     // win.loadURL('app://./index.html')
   }
 }
-function query(){
-  var db = new sqliteDB('D:\\Code\\LChat\\demo\\xw.db');
-  var sql = 'select * from lchat_friend'
-  db.queryData(sql,((data) => {
-    console.log(data)
-  }))
-}
+
 ipcMain.on('login',(event,arg) => {
   console.log(arg)
   createConnect(arg.toString())
   // win.setPosition(10,10)
   win.setMaximumSize(1250,735)
   win.setSize(1280,735)
-  query()
   win.center()
   win.webContents.send('success','client')
 })
 ipcMain.on('query',(event,arg) => {
-  console.log('query: '+arg)
+  let db = new sqliteDB('D:\\Code\\LChat\\demo\\xw.db');
+  // let insertSql = 'insert into lchat_friend values (?,?,?,?,?)'
+  // db.insertData(insertSql,arg)
+  let querySql = 'select * from lchat_friend'
+  db.queryData(querySql,((data) => {
+    win.webContents.send('friendsInfo',data)
+  }))
 })
 ipcMain.on('logout',(event,arg) => {
   console.log(arg)

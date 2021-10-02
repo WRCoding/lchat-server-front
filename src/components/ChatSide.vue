@@ -116,7 +116,7 @@ export default {
       flag: true, //判断modal的圆角是background还是avatar,true为background
       imageUrl: '',
       userInfo: {},
-      changeAction: 0,
+      changeAction: 1,
     }
   },
   created() {
@@ -124,7 +124,6 @@ export default {
   },
   methods: {
     actionChange(val){
-      console.log(val)
       this.changeAction = val
       eventBus.$emit('changeAction', this.changeAction)
     },

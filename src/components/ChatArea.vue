@@ -6,55 +6,45 @@
         </a-empty>
       </a-row>
       <a-row v-if="click">
-        <a-col
-            style="background-color: rgb(247, 247, 247);height: 50px;display: block;border-bottom: 1px solid rgb(214,214,214)">
-          <span style="font-size: 25px;margin-left: 40px"><b>林北</b></span>
+        <a-col style="background-color: rgb(247, 247, 247);height: 50px;display: block;border-bottom: 1px solid rgb(214,214,214)">
+          <span style="font-size: 25px;margin-left: 40px"><b>{{leftUserInfo.username}}</b></span>
         </a-col>
         <a-col>
           <a-row>
             <a-col class="chatArea">
-              <!--左边聊天框-->
-              <ul style="display: flex;flex-direction: column;margin-top: 10px">
-                <li>
+              <a-space direction="vertical" style="width: 100%">
+                <div style="margin-top: 4px">
                   <p class="chatBox-time" >2021-08-22 9:32</p>
-                  <div style="float:left;margin-left: 4px">
-                    <a-avatar shape="square" style="display: inline-block;vertical-align: top" :size="40"
-                              src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg"/>
+                  <div class="chatBox-left-li">
+                    <a-avatar shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
                     <img src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg"
-                         style="border-radius: 5px;display: inline-block;margin-left: 10px" width="100px"
-                         height="200px">
+                         class="chatBox-img-left">
                   </div>
-                </li>
-                <li>
+                </div>
+                <div style="margin-top: 4px">
                   <p class="chatBox-time" >2021-08-22 9:32</p>
-                  <div style="margin-left: 7px;margin-top: 10px;margin-bottom: 4px">
-                    <a-avatar shape="square" :size="40" style="display: inline-block;vertical-align: top"
-                              src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg"/>
-                    <p class="chatBox-left">{{ chat }}</p>
-                  </div>
-                </li>
-              </ul>
-              <!--右边聊天框-->
-              <ul style="display: flex;flex-direction: column;">
-                <li style="margin-left: auto;margin-right: 7px">
-                  <img src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg"
-                       style="border-radius: 5px;display: inline-block;margin-right: 10px" width="100px"
-                       height="200px" alt="ddd">
-                  <a-avatar shape="square" style="display: inline-block;vertical-align: top" :size="40"
-                            :src="userInfo.avatar"/>
-                </li>
-                <li v-for=" index in 5" :key="index" >
-                  <p class="chatBox-time" >2021-08-22 9:32</p>
-                  <div style="float: right;margin-right: 7px;margin-top: 10px;margin-bottom: 4px">
-                    <p class="chatBox-right">
-                      {{ chat }}
+                  <div class="chatBox-right-li">
+                    <p class="chatBox-right-text">
+                      sdaadsdas
                     </p>
-                    <a-avatar shape="square" :size="40"
-                              style="display: inline-block;vertical-align: top;cursor: pointer"
-                              :src="userInfo.avatar" @click="showCard()"/>
+                    <a-avatar shape="square" :size="40" class="chatBox-avatar" :src="userInfo.avatar" @click="showCard()"/>
                   </div>
-                </li>
-              </ul>
+                </div>
+                <div style="margin-top: 4px">
+                  <p class="chatBox-time" >2021-08-22 9:32</p>
+                  <div class="chatBox-left-li">
+                    <a-avatar shape="square"class="chatBox-avatar" :size="40" :src="leftUserInfo.avatar"/>
+                    <p class="chatBox-left-text">asdasd</p>
+                  </div>
+                </div>
+                <div style="margin-top: 4px">
+                  <p class="chatBox-time" >2021-08-22 9:32</p>
+                  <div class="chatBox-right-li">
+                    <img src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-right" alt="ddd">
+                    <a-avatar shape="square" class="chatBox-avatar" :size="40" :src="userInfo.avatar"/>
+                  </div>
+                </div>
+              </a-space>
             </a-col>
             <a-col style="width: 100%">
               <!--消息发送区域-->
@@ -108,17 +98,17 @@ import { ipcRenderer } from 'electron'
 
 export default {
   name: "chat-area",
-  props:{
-  },
   data(){
     return {
       tip: false, // tooltip是否显示
       openCard: false,
+      rightChat: [],
+      leftChat: [],
+      leftUserInfo:{},
       chat: '',
       click: false,
       userInfo: {},
       dbFile: '',
-      // socket: new Socket(),
       db: null
     }
   },
@@ -130,6 +120,7 @@ export default {
     eventBus.$on('click', (data) => {
       console.log(data)
       this.click = true
+      this.leftUserInfo = data
     })
   },
   methods: {
@@ -193,7 +184,7 @@ ul{
   border: solid 1px;
 }
 
-.chatBox-right {
+.chatBox-right-text {
   border: 1px solid rgb(214, 214, 214);
   border-radius: 5px;
   padding: 10px 10px;
@@ -205,7 +196,7 @@ ul{
   position: relative;
 }
 
-.chatBox-right::after {
+.chatBox-right-text::after {
   white-space: pre-line;
   content: ' ';
   display: inline-block;
@@ -219,7 +210,7 @@ ul{
   right: -12px;
 }
 
-.chatBox-left {
+.chatBox-left-text {
   border: 1px solid rgb(240, 240, 240);
   background-color: rgb(255, 255, 255);
   border-radius: 5px;
@@ -231,7 +222,7 @@ ul{
   position: relative;
 }
 
-.chatBox-left::after {
+.chatBox-left-text::after {
   content: ' ';
   display: inline-block;
   border: 6px solid transparent;
@@ -267,6 +258,34 @@ ul{
   background-color:rgb(245, 245, 245);
   resize: none;
   outline: none
+}
+.chatBox-img-left{
+  border-radius: 5px;
+  display: inline-block;
+  margin-left: 10px;
+  width:100px;
+  height:200px
+}
+.chatBox-img-right{
+  border-radius: 5px;
+  display: inline-block;
+  margin-right: 10px;
+  width:100px;
+  height:200px
+}
+.chatBox-avatar{
+  display: inline-block;
+  vertical-align: top;
+}
+.chatBox-left-li{
+  float:left;
+  margin-left: 2px
+}
+.chatBox-right-li{
+  float: right;
+  margin-right: 7px;
+  margin-top: 10px;
+  margin-bottom: 4px
 }
 
 </style>

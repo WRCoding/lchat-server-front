@@ -41,8 +41,6 @@ export default {
           const data = {'msgSeq': new Date().getTime(), 'from': userInfo.id, 'to': 'server','message':'', 'msgType': 'INIT'};
           ipcRenderer.send('login',JSON.stringify(data))
           ipcRenderer.on('success',((event,arg) => {
-            console.log('arg: ',arg)
-            console.log('event: ',event)
             this.$router.push('/index')
           }))
         }else{
@@ -70,11 +68,6 @@ export default {
             );
       `
       db.createTable(sql)
-      var s = 'select * from lchat_friend'
-      db.queryData(s,((data) => {
-        console.log('data: '+data)
-      }))
-      db.close()
       this.$store.commit('setDB',db)
     }
   }

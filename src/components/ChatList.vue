@@ -17,7 +17,7 @@
             </span>
       </a-col>
       <a-col class="chat-list" style="background-color: rgb(228, 228, 229);height:650px;max-height: 650px;display: block;cursor: pointer">
-        <div v-if="search.length === 0" class="chat-list-card" @click="toChat()" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in chatList">
+        <div v-if="search.length === 0" class="chat-list-card" @click="toChat(item)" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px" v-for="item in chatList">
           <a-space align="center">
             <a-badge :count="77"><a-avatar :size="45" shape="square" :src="item.avatar" /></a-badge>
             <a-space direction="vertical" style="margin-left: 7px">
@@ -114,8 +114,8 @@ export default {
         ipcRenderer.send('query',friends)
       })
     },
-    toChat(){
-      eventBus.$emit('click', '妈妈说，该做作业了！(^_^)!!!')
+    toChat(val){
+      eventBus.$emit('click', val)
     },
     addFriend(id){
       let currentId = this.$store.getters.getInfo.id

@@ -13,37 +13,40 @@
           <a-row>
             <a-col class="chatArea">
               <a-space direction="vertical" style="width: 100%">
-                <div style="margin-top: 4px">
+                <div style="margin-top: 4px" v-for="chat in chats">
                   <p class="chatBox-time" >2021-08-22 9:32</p>
-                  <div class="chatBox-left-li">
-                    <a-avatar shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
-                    <img src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg"
-                         class="chatBox-img-left">
-                  </div>
-                </div>
-                <div style="margin-top: 4px">
-                  <p class="chatBox-time" >2021-08-22 9:32</p>
-                  <div class="chatBox-right-li">
-                    <p class="chatBox-right-text">
-                      sdaadsdas
+                  <div v-bind:class="{'chatBox-left-li': chat.from === leftUserInfo.userid,'chatBox-right-li': chat.from === userInfo.id}">
+                    <p v-if="chat.from === userInfo.id" class="chatBox-right-text">
+                      {{chat.message}}
                     </p>
-                    <a-avatar shape="square" :size="40" class="chatBox-avatar" :src="userInfo.avatar" @click="showCard()"/>
+                    <a-avatar shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
+                    <p v-if="chat.from === leftUserInfo.userid" class="chatBox-left-text">{{chat.message}}</p>
+                    <img v-if="chat.msgType === 'IMAGE'" src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-left">
                   </div>
                 </div>
-                <div style="margin-top: 4px">
-                  <p class="chatBox-time" >2021-08-22 9:32</p>
-                  <div class="chatBox-left-li">
-                    <a-avatar shape="square"class="chatBox-avatar" :size="40" :src="leftUserInfo.avatar"/>
-                    <p class="chatBox-left-text">asdasd</p>
-                  </div>
-                </div>
-                <div style="margin-top: 4px">
-                  <p class="chatBox-time" >2021-08-22 9:32</p>
-                  <div class="chatBox-right-li">
-                    <img src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-right" alt="ddd">
-                    <a-avatar shape="square" class="chatBox-avatar" :size="40" :src="userInfo.avatar"/>
-                  </div>
-                </div>
+<!--                <div style="margin-top: 4px">-->
+<!--                  <p class="chatBox-time" >2021-08-22 9:32</p>-->
+<!--                  <div class="chatBox-right-li">-->
+<!--                    <p class="chatBox-right-text">-->
+<!--                      sdaadsdas-->
+<!--                    </p>-->
+<!--                    <a-avatar shape="square" :size="40" class="chatBox-avatar" :src="userInfo.avatar" @click="showCard()"/>-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--                <div style="margin-top: 4px" v-for="chat in leftChat">-->
+<!--                  <p class="chatBox-time" >2021-08-22 9:32</p>-->
+<!--                  <div class="chatBox-left-li">-->
+<!--                    <a-avatar shape="square"class="chatBox-avatar" :size="40" :src="leftUserInfo.avatar"/>-->
+<!--                    <p class="chatBox-left-text">{{chat.message}}</p>-->
+<!--                  </div>-->
+<!--                </div>-->
+<!--                <div style="margin-top: 4px">-->
+<!--                  <p class="chatBox-time" >2021-08-22 9:32</p>-->
+<!--                  <div class="chatBox-right-li">-->
+<!--                    <img src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-right" alt="ddd">-->
+<!--                    <a-avatar shape="square" class="chatBox-avatar" :size="40" :src="userInfo.avatar"/>-->
+<!--                  </div>-->
+<!--                </div>-->
               </a-space>
             </a-col>
             <a-col style="width: 100%">
@@ -103,6 +106,7 @@ export default {
       tip: false, // tooltip是否显示
       openCard: false,
       rightChat: [],
+      chats: [],
       leftChat: [],
       leftUserInfo:{},
       chat: '',
@@ -115,7 +119,8 @@ export default {
   created() {
     this.init()
     ipcRenderer.on('receive',(event,arg) => {
-      console.log(arg)
+      this.chats.push(JSON.parse(arg.toString()))
+      console.log(this.chats)
     })
     eventBus.$on('click', (data) => {
       this.click = true
@@ -146,6 +151,7 @@ export default {
           },2500)
         }else {
           data.message = this.chat
+          this.chats.push(data)
           ipcRenderer.send('sendMsg',JSON.stringify(data)  + '\n')
         }
         this.chat = ''

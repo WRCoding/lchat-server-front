@@ -92,14 +92,6 @@ export default {
       console.log('chatList: ',this.chatList)
     }))
   },
-  mounted() {
-
-  },
-  watch:{
-    userSearch(val,oldVal){
-
-    }
-  },
   methods: {
     queryFriends(){
       let currentId = this.$store.getters.getInfo.id
@@ -111,7 +103,8 @@ export default {
           let friend = [data[i].id,data[i].userName,data[i].avatar,data[i].background,data[i].description]
           friends.push(friend)
         }
-        ipcRenderer.send('query',friends)
+        ipcRenderer.send('updateFriend',friends)
+        ipcRenderer.send('query','')
       })
     },
     toChat(val){
@@ -123,6 +116,9 @@ export default {
       console.log('currentId: '+currentId+' , id: '+id)
       friend.addFriend(JSON.stringify(data)).then(response => {
         console.log(response)
+        if (response.data.code === 200){
+          this.queryFriends()
+        }
       })
     },
     searchValue(e){

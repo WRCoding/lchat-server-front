@@ -118,9 +118,9 @@ export default {
       console.log(arg)
     })
     eventBus.$on('click', (data) => {
-      console.log(data)
       this.click = true
       this.leftUserInfo = data
+      console.log(this.leftUserInfo)
     })
   },
   methods: {
@@ -131,12 +131,12 @@ export default {
     showCard() {
       this.openCard = true
     },
-    handleKeyCode(event){
+    handleKeyCode(event){ 3
       if (event.ctrlKey){
         let content = this.chat
         this.chat = content + '\n'
       }else {
-        const data = {'msgSeq': new Date().getTime(), 'from': this.userInfo.id, 'to': '4028d5827c061895017c06195d8d0000','msgType': 'TEXT'};
+        const data = {'msgSeq': new Date().getTime(), 'from': this.userInfo.id, 'to': this.leftUserInfo.userid,'msgType': 'TEXT'};
         event.preventDefault()
         let content = this.chat.trim()
         if (content.length === 0){

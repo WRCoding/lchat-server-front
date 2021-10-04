@@ -13,6 +13,8 @@ protocol.registerSchemesAsPrivileged([
 let win;
 let socket;
 
+let db = null
+
 function createConnect(message){
   socket = net.createConnection({
     host: '127.0.0.1',
@@ -64,17 +66,23 @@ function createWindow() {
 
 ipcMain.on('login',(event,arg) => {
   console.log(arg)
-  createConnect(arg.toString())
+  let array = arg.split('*')
+  console.log(array[0])
+  createConnect(array[1].toString())
+  db = new sqliteDB(array[0]+'.db');
   // win.setPosition(10,10)
   win.setMaximumSize(1250,735)
   win.setSize(1280,735)
   win.center()
   win.webContents.send('success','client')
 })
-ipcMain.on('query',(event,arg) => {
-  let db = new sqliteDB('D:\\Code\\LChat\\demo\\xw.db');
-  // let insertSql = 'insert into lchat_friend values (?,?,?,?,?)'
-  // db.insertData(insertSql,arg)
+ipcMain.on('updateFriend',(event,arg) =>{
+  let deleteSql = 'delete from lchat_friend'
+  db.executeSql(deleteSql)
+  let insertSql = 'insert into lchat_friend values (?,?,?,?,?)'
+  db.insertDataBatch(insertSql,arg)
+})
+ipcMain.on('query',() => {
   let querySql = 'select * from lchat_friend'
   db.queryData(querySql,((data) => {
     win.webContents.send('friendsInfo',data)
@@ -90,11 +98,15 @@ ipcMain.on('logout',(event,arg) => {
   event.sender.send('successLogout','to index')
 })
 ipcMain.on('sendMsg',(event,arg) => {
+  let message = JSON.parse(arg)
+  console.log(message)
+  let data = [message.msgSeq,message.from,message.to,message.message,message.msgType]
+  let insertSql = 'insert into lchat_message values (?,?,?,?,?)'
+  db.insertData(insertSql,data)
   writeToServer(arg.toString())
 })
 
 function writeToServer(msg){
-  console.log('发送数据: ',msg)
   socket.write(msg,()=>{
     console.log('发送成功')
   })

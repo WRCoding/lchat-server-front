@@ -3,15 +3,46 @@ const sqlite3 = require('sqlite3').verbose();
 
 const db =  {};
 
+
 db.sqliteDB = function (file){
     db.database = new sqlite3.Database(file)
-    
+
     db.exist = fs.existsSync(file)
     if (!db.exist){
         console.log("create db file")
         fs.openSync(file, 'w')
     }
     console.log('open db file success')
+    //创建好友表
+    db.database.serialize(() => {
+        let sql = `
+            CREATE TABLE IF NOT EXISTS "lchat_friend" (
+              "userid" text NOT NULL,
+              "username" blob,
+              "avatar" text,
+              "background" text,
+              "description" text,
+              PRIMARY KEY ("userid")
+            );
+        `
+        db.database.run(sql,() => {
+        })
+    })
+    //创建消息表
+    db.database.serialize(() => {
+        let sql = `
+            CREATE TABLE IF NOT EXISTS "lchat_message" (
+              "msgSeq" INTEGER NOT NULL,
+              "from" text,
+              "to" text,
+              "message" text,
+              "msgType" text
+            );
+        `
+        db.database.run(sql,() => {
+        })
+    })
+
 };
 
 db.printErrorInfo = function (err){
@@ -29,12 +60,20 @@ db.sqliteDB.prototype.createTable =  (sql) => {
     })
 }
 
-db.sqliteDB.prototype.insertData = (sql, object) => {
+db.sqliteDB.prototype.insertDataBatch = (sql, object) => {
     db.database.serialize(() => {
         const stmt = db.database.prepare(sql);
         for (let i = 0; i<object.length; ++i){
             stmt.run(object[i])
         }
+        stmt.finalize()
+    })
+}
+
+db.sqliteDB.prototype.insertData = (sql, object) => {
+    db.database.serialize(() => {
+        const stmt = db.database.prepare(sql);
+        stmt.run(object)
         stmt.finalize()
     })
 }
@@ -64,6 +103,7 @@ db.sqliteDB.prototype.executeSql = (sql) => {
 db.sqliteDB.prototype.close = () => {
     db.database.close()
 }
+
 
 exports.sqliteDB = db.sqliteDB
 

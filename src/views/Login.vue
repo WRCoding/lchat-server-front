@@ -36,10 +36,11 @@ export default {
         if (result.code === 200){
           let userInfo = result.data
           this.$store.commit('setInfo',userInfo)
-          this.createDB(userInfo)
+          // this.createDB(userInfo)
           this.clearInput()
-          const data = {'msgSeq': new Date().getTime(), 'from': userInfo.id, 'to': 'server','message':'', 'msgType': 'INIT'};
-          ipcRenderer.send('login',JSON.stringify(data))
+          let data = {'msgSeq': new Date().getTime(), 'from': userInfo.id, 'to': 'server','message':'', 'msgType': 'INIT'};
+          data = userName + '*' +JSON.stringify(data)
+          ipcRenderer.send('login',data)
           ipcRenderer.on('success',((event,arg) => {
             this.$router.push('/index')
           }))
@@ -54,22 +55,22 @@ export default {
       this.userName = ''
       this.password = ''
     },
-    createDB(userInfo) {
-      let dbFile = userInfo.userName + '.db'
-      let db = new sqliteDB(dbFile)
-      let sql = `
-            CREATE TABLE IF NOT EXISTS "lchat_friend" (
-              "userid" text NOT NULL,
-              "username" blob,
-              "avatar" text,
-              "background" text,
-              "description" text,
-              PRIMARY KEY ("userid")
-            );
-      `
-      db.createTable(sql)
-      this.$store.commit('setDB',db)
-    }
+    // createDB(userInfo) {
+    //   let dbFile = userInfo.userName + '.db'
+    //   let db = new sqliteDB(dbFile)
+    //   let sql = `
+    //         CREATE TABLE IF NOT EXISTS "lchat_friend" (
+    //           "userid" text NOT NULL,
+    //           "username" blob,
+    //           "avatar" text,
+    //           "background" text,
+    //           "description" text,
+    //           PRIMARY KEY ("userid")
+    //         );
+    //   `
+    //   db.createTable(sql)
+    //   this.$store.commit('setDB',db)
+    // }
   }
 }
 </script>

@@ -14,12 +14,13 @@
             <a-col class="chatArea">
               <a-space direction="vertical" style="width: 100%">
                 <div style="margin-top: 4px" v-for="chat in chats">
-                  <p class="chatBox-time" >2021-08-22 9:32</p>
+                  <p class="chatBox-time" >{{time(chat.msgSeq)}}</p>
                   <div v-bind:class="{'chatBox-left-li': chat.from === leftUserInfo.userid,'chatBox-right-li': chat.from === userInfo.id}">
                     <p v-if="chat.from === userInfo.id" class="chatBox-right-text">
                       {{chat.message}}
                     </p>
-                    <a-avatar shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
+                    <a-avatar v-if="chat.from === leftUserInfo.userid" shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
+                    <a-avatar v-if="chat.from === userInfo.id" shape="square" class="chatBox-avatar" :src="userInfo.avatar" :size="40"/>
                     <p v-if="chat.from === leftUserInfo.userid" class="chatBox-left-text">{{chat.message}}</p>
                     <img v-if="chat.msgType === 'IMAGE'" src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-left">
                   </div>
@@ -98,11 +99,18 @@
 <script>
 import {eventBus} from '../main'
 import { ipcRenderer } from 'electron'
-
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
+const isToday = require('dayjs/plugin/isToday');
+const isYesterday = require('dayjs/plugin/isYesterday');
+dayjs.locale('zh-cn')
+dayjs.extend(isYesterday)
+dayjs.extend(isToday)
 export default {
   name: "chat-area",
   data(){
     return {
+      _day: '',
       tip: false, // tooltip是否显示
       openCard: false,
       rightChat: [],
@@ -117,18 +125,39 @@ export default {
     }
   },
   created() {
+    this._day = dayjs
     this.init()
     ipcRenderer.on('receive',(event,arg) => {
       this.chats.push(JSON.parse(arg.toString()))
-      console.log(this.chats)
+      ipcRenderer.send('saveChat',arg)
+      // console.log(this.chats)
     })
     eventBus.$on('click', (data) => {
+      this.chats = []
       this.click = true
       this.leftUserInfo = data
-      console.log(this.leftUserInfo)
+      // console.log(this.leftUserInfo)
+      ipcRenderer.send('queryChats',[this.userInfo.id,this.leftUserInfo.userid])
+      ipcRenderer.on('chats',((event, arg) => {
+        // console.log('chats: ', arg)
+        this.chats = arg
+      }))
     })
   },
   methods: {
+    time(val){
+      if (this._day(val).isToday()){
+        let time = this._day(val).format('HH:mm')
+        return time
+      }else if (this._day(val).isYesterday()){
+        let time = this._day(val).format('昨天 HH:mm')
+        return time
+      }else{
+        let time = this._day(val).format('YYYY-MM-DD HH:mm')
+        return time
+      }
+
+    },
     init(){
       this.userInfo = this.$store.getters.getInfo
       this.db = this.$store.getters.getDB
@@ -136,7 +165,7 @@ export default {
     showCard() {
       this.openCard = true
     },
-    handleKeyCode(event){ 3
+    handleKeyCode(event){
       if (event.ctrlKey){
         let content = this.chat
         this.chat = content + '\n'
@@ -179,8 +208,7 @@ ul{
 }
 
 .chatBox-time{
-  position: relative;
-  left: 45%;
+  margin: 0 auto;
   background-color: rgb(218, 218, 218);
   color: white;
   border-radius: 5px;

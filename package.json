@@ -18,6 +18,7 @@
     "axios": "^0.21.1",
     "babel-plugin-transform-remove-strict-mode": "0.0.2",
     "core-js": "^3.6.5",
+    "dayjs": "^1.10.7",
     "sqlite3": "^5.0.2",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",

@@ -104,7 +104,7 @@ export default {
           friends.push(friend)
         }
         ipcRenderer.send('updateFriend',friends)
-        ipcRenderer.send('query','')
+        ipcRenderer.send('queryFriend','')
       })
     },
     toChat(val){

@@ -82,10 +82,30 @@ ipcMain.on('updateFriend',(event,arg) =>{
   let insertSql = 'insert into lchat_friend values (?,?,?,?,?)'
   db.insertDataBatch(insertSql,arg)
 })
-ipcMain.on('query',() => {
+ipcMain.on('queryFriend',() => {
   let querySql = 'select * from lchat_friend'
   db.queryData(querySql,((data) => {
     win.webContents.send('friendsInfo',data)
+  }))
+})
+ipcMain.on('queryChats',(event,arg) => {
+
+  let querySql = `
+      SELECT
+        * 
+      FROM
+        lchat_message 
+        WHERE
+        ("from" = '?' and "to" = '#') 
+        OR ("from" = '#' and "to" = '?')  
+        ORDER BY
+        msgSeq ASC
+  `
+  querySql = querySql.replaceAll('?',arg[0])
+  querySql = querySql.replaceAll('#',arg[1])
+  console.log('queryChats : ' + querySql)
+  db.queryData(querySql,((data) => {
+    win.webContents.send('chats',data)
   }))
 })
 ipcMain.on('logout',(event,arg) => {
@@ -98,14 +118,19 @@ ipcMain.on('logout',(event,arg) => {
   event.sender.send('successLogout','to index')
 })
 ipcMain.on('sendMsg',(event,arg) => {
-  let message = JSON.parse(arg)
+  writeToServer(arg.toString())
+  saveChat(arg)
+})
+ipcMain.on('saveChat',(event,arg) => {
+  saveChat(arg)
+})
+function saveChat(msg){
+  let message = JSON.parse(msg)
   console.log(message)
   let data = [message.msgSeq,message.from,message.to,message.message,message.msgType]
   let insertSql = 'insert into lchat_message values (?,?,?,?,?)'
   db.insertData(insertSql,data)
-  writeToServer(arg.toString())
-})
-
+}
 function writeToServer(msg){
   socket.write(msg,()=>{
     console.log('发送成功')

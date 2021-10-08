@@ -1,11 +1,11 @@
 <template>
     <!--聊天区域-->
     <a-col flex="auto" style="background-color: rgb(245, 245, 245)">
-      <a-row style="top: 35%" v-if="!click">
+      <a-row style="top: 35%" v-if="!click && !toInfo">
         <a-empty :description="false">
         </a-empty>
       </a-row>
-      <a-row v-if="click">
+      <a-row v-if="click && !toInfo">
         <a-col style="background-color: rgb(247, 247, 247);height: 50px;display: block;border-bottom: 1px solid rgb(214,214,214)">
           <span style="font-size: 25px;margin-left: 40px"><b>{{leftUserInfo.username}}</b></span>
         </a-col>
@@ -25,29 +25,6 @@
                     <img v-if="chat.msgType === 'IMAGE'" src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-left">
                   </div>
                 </div>
-<!--                <div style="margin-top: 4px">-->
-<!--                  <p class="chatBox-time" >2021-08-22 9:32</p>-->
-<!--                  <div class="chatBox-right-li">-->
-<!--                    <p class="chatBox-right-text">-->
-<!--                      sdaadsdas-->
-<!--                    </p>-->
-<!--                    <a-avatar shape="square" :size="40" class="chatBox-avatar" :src="userInfo.avatar" @click="showCard()"/>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--                <div style="margin-top: 4px" v-for="chat in leftChat">-->
-<!--                  <p class="chatBox-time" >2021-08-22 9:32</p>-->
-<!--                  <div class="chatBox-left-li">-->
-<!--                    <a-avatar shape="square"class="chatBox-avatar" :size="40" :src="leftUserInfo.avatar"/>-->
-<!--                    <p class="chatBox-left-text">{{chat.message}}</p>-->
-<!--                  </div>-->
-<!--                </div>-->
-<!--                <div style="margin-top: 4px">-->
-<!--                  <p class="chatBox-time" >2021-08-22 9:32</p>-->
-<!--                  <div class="chatBox-right-li">-->
-<!--                    <img src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-right" alt="ddd">-->
-<!--                    <a-avatar shape="square" class="chatBox-avatar" :size="40" :src="userInfo.avatar"/>-->
-<!--                  </div>-->
-<!--                </div>-->
               </a-space>
             </a-col>
             <a-col style="width: 100%">
@@ -70,6 +47,36 @@
             </a-col>
           </a-row>
         </a-col>
+      </a-row>
+      <a-row v-if="toInfo" style="height: 100%">
+        <div style="height: 400px;width: 400px;margin: 0 auto;position: relative;top: 50%;transform: translateY(-50%);">
+          <a-card hoverable style="width: 300px">
+            <img
+                slot="cover"
+                alt="example"
+                width="200px"
+                height="200px"
+                :src="friendInfo.background"
+            />
+            <a-card-meta >
+              <template slot="title">
+                {{friendInfo.username}}
+              </template>
+              <template slot="description">
+                {{friendInfo.description}}
+              </template>
+              <a-avatar
+                  slot="avatar"
+                  :src="friendInfo.avatar"
+              />
+            </a-card-meta>
+            <template slot="actions" class="ant-card-actions">
+              <a-button type="link" @click="toChat()">
+                发消息
+              </a-button>
+            </template>
+          </a-card>
+        </div>
       </a-row>
       <a-modal v-model="openCard" :footer="null" :closable="false" :width="300">
         <a-card style="border: solid 0">
@@ -119,7 +126,9 @@ export default {
       leftUserInfo:{},
       chat: '',
       click: false,
+      toInfo: false,
       userInfo: {},
+      friendInfo: {},
       dbFile: '',
       db: null
     }
@@ -130,7 +139,6 @@ export default {
     ipcRenderer.on('receive',(event,arg) => {
       this.chats.push(JSON.parse(arg.toString()))
       ipcRenderer.send('saveChat',arg)
-      // console.log(this.chats)
     })
     eventBus.$on('click', (data) => {
       this.chats = []
@@ -143,8 +151,16 @@ export default {
         this.chats = arg
       }))
     })
+    eventBus.$on('toInfo',(data) => {
+      this.toInfo = true
+      this.friendInfo = data
+    })
   },
   methods: {
+    toChat(){
+      eventBus.$emit('session',this.friendInfo)
+      this.toInfo = false
+    },
     time(val){
       if (this._day(val).isToday()){
         let time = this._day(val).format('HH:mm')

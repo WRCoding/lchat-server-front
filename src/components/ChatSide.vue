@@ -121,6 +121,9 @@ export default {
   },
   created() {
     this.userInfo = this.$store.getters.getInfo
+    eventBus.$on('session',(data) => {
+      this.changeAction = 1
+    })
   },
   methods: {
     actionChange(val){

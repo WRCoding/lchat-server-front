@@ -11,7 +11,7 @@ protocol.registerSchemesAsPrivileged([
 
 
 let win;
-let socket;
+let socket = null;
 
 let db = null
 
@@ -25,11 +25,12 @@ function createConnect(message){
     writeToServer(message)
   })
   socket.on('data', buffer => {
-    console.log(buffer.toString());
+    console.log(socket.localAddress+' : '+socket.localPort+' -> '+buffer.toString());
     win.webContents.send('receive',buffer.toString())
   });
 
   socket.on('end',() => {
+    socket = null
     console.log('disconnected from server');
   })
 }
@@ -65,9 +66,7 @@ function createWindow() {
 }
 
 ipcMain.on('login',(event,arg) => {
-  console.log(arg)
   let array = arg.split('*')
-  console.log(array[0])
   createConnect(array[1].toString())
   db = new sqliteDB(array[0]+'.db');
   // win.setPosition(10,10)
@@ -103,13 +102,11 @@ ipcMain.on('queryChats',(event,arg) => {
   `
   querySql = querySql.replaceAll('?',arg[0])
   querySql = querySql.replaceAll('#',arg[1])
-  console.log('queryChats : ' + querySql)
   db.queryData(querySql,((data) => {
     win.webContents.send('chats',data)
   }))
 })
 ipcMain.on('logout',(event,arg) => {
-  console.log(arg)
   win.setMaximumSize(500,300)
   win.setSize(500,300)
   win.center()
@@ -126,7 +123,6 @@ ipcMain.on('saveChat',(event,arg) => {
 })
 function saveChat(msg){
   let message = JSON.parse(msg)
-  console.log(message)
   let data = [message.msgSeq,message.from,message.to,message.message,message.msgType]
   let insertSql = 'insert into lchat_message values (?,?,?,?,?)'
   db.insertData(insertSql,data)

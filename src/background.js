@@ -64,7 +64,16 @@ function createWindow() {
     // win.loadURL('app://./index.html')
   }
 }
-
+ipcMain.on('openDialog',(event,arg) => {
+  dialog.showOpenDialog(win, {
+    properties: ['openFile']
+  }).then(result => {
+    console.log(result.canceled)
+    console.log(result.filePaths)
+  }).catch(err => {
+    console.log(err)
+  })
+})
 ipcMain.on('login',(event,arg) => {
   let array = arg.split('*')
   createConnect(array[1].toString())
@@ -88,7 +97,6 @@ ipcMain.on('queryFriend',() => {
   }))
 })
 ipcMain.on('queryChats',(event,arg) => {
-
   let querySql = `
       SELECT
         * 

@@ -31,10 +31,19 @@
               <!--消息发送区域-->
               <div>
                 <a-icon type="smile" style="font-size: 20px;margin-left: 17px;margin-top: 5px"></a-icon>
-                <a-icon type="folder-open" style="font-size: 20px;margin-left: 10px;margin-top: 5px"></a-icon>
+                <a-upload :before-upload="beforeUpload" list-type="picture">
+                  <a-icon type="folder-open" style="font-size: 20px;margin-left: 10px;margin-top: 5px"></a-icon>
+                </a-upload>
               </div>
               <div style="width: 100%">
-                <textarea v-model="chat" class="area-text" wrap="hard" @keydown.enter="handleKeyCode($event)"/>
+                <div v-viewer="options" contenteditable="true" v-model="chat" class="area-text"  v-on:keyup.ctrl.86="paste()" @keydown.enter="handleKeyCode($event)">
+                    <template v-for="(image,index) in pasteUrls">
+                      <img
+                          :src="image.source" class="image" :key="index"
+                          :data-src="image.thumbnail"
+                      >
+                    </template>
+                </div>
               </div>
               <div>
                 <a-tooltip :visible="tip" placement="topLeft">
@@ -113,10 +122,15 @@ const isYesterday = require('dayjs/plugin/isYesterday');
 dayjs.locale('zh-cn')
 dayjs.extend(isYesterday)
 dayjs.extend(isToday)
+const clipboard = require('electron').clipboard
 export default {
   name: "chat-area",
   data(){
     return {
+      options: {
+        url: 'data-src'
+      },
+      upload: false,
       _day: '',
       tip: false, // tooltip是否显示
       openCard: false,
@@ -130,7 +144,9 @@ export default {
       userInfo: {},
       friendInfo: {},
       dbFile: '',
-      db: null
+      db: null,
+      pasteUrls: [],
+      formalUrls: []
     }
   },
   created() {
@@ -157,6 +173,31 @@ export default {
     })
   },
   methods: {
+    beforeUpload() {
+      return false;
+    },
+    openDialog(){
+      ipcRenderer.send('openDialog','')
+    },
+    paste(){
+      if (!clipboard.readImage().isEmpty()){
+        let image = clipboard.readImage()
+        this.formalUrls.push(image.toDataURL())
+        console.log(image.getSize())
+        console.log(image.getAspectRatio())
+        let width = image.getSize().width
+        let height = image.getSize().height
+        let ratio = image.getAspectRatio()
+        let reSizeHeight = height/ratio
+        console.log('width: '+width+' height: '+reSizeHeight)
+        let resizeImage = image.resize({width:100,height:50,quality: 'good'})
+        console.log(resizeImage.getSize())
+        console.log(resizeImage.getAspectRatio())
+        this.pasteUrls.push({thumbnail:image.toDataURL(),source:resizeImage.toDataURL()})
+      }else{
+        console.log(clipboard.readText())
+      }
+    },
     toChat(){
       eventBus.$emit('session',this.friendInfo)
       this.toInfo = false
@@ -301,13 +342,19 @@ ul{
   border: solid 0;
 }
 .area-text{
+  display: flex;
+  align-items: flex-end;
   padding: 10px;
-  width: 100%;
+  width: 869px;
   height:77px;
   border: solid 0;
   background-color:rgb(245, 245, 245);
   resize: none;
-  outline: none
+  outline: none;
+  word-wrap: break-word;
+  word-break: break-all;
+  overflow-y: auto;
+  -webkit-user-modify: read-write-plaintext-only;
 }
 .chatBox-img-left{
   border-radius: 5px;

@@ -36,7 +36,7 @@
                 </a-upload>
               </div>
               <div style="width: 100%">
-                <div v-viewer="options" contenteditable="true" v-model="chat" class="area-text"  v-on:keyup.ctrl.86="paste()" @keydown.enter="handleKeyCode($event)">
+                <div v-viewer="options" contenteditable="true" v-model="chat" class="area-text"  v-on:keyup.ctrl.86="paste()" @keydown.enter="handleKeyCode($event) ">
                     <template v-for="(image,index) in pasteUrls">
                       <img
                           :src="image.source" class="image" :key="index"
@@ -173,6 +173,9 @@ export default {
     })
   },
   methods: {
+    getMessage(event){
+      console.log(event)
+    },
     beforeUpload() {
       return false;
     },
@@ -223,6 +226,13 @@ export default {
       this.openCard = true
     },
     handleKeyCode(event){
+      console.log('event: ',event)
+      let images = event.target.children
+      console.log(event.target.innerText)
+      for (let i = 0; i < images.length; i++) {
+        console.log(images[i].currentSrc)
+      }
+
       if (event.ctrlKey){
         let content = this.chat
         this.chat = content + '\n'

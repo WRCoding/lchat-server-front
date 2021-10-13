@@ -12,6 +12,7 @@
 import chatList from  '../components/ChatList'
 import chatArea from  '../components/ChatArea'
 import chatSide from  '../components/ChatSide'
+
 export default {
   components: {
     chatList,

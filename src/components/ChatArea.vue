@@ -115,6 +115,7 @@
 <script>
 import {eventBus} from '../main'
 import { ipcRenderer } from 'electron'
+import image from '../js/image'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 const isToday = require('dayjs/plugin/isToday');
@@ -229,8 +230,10 @@ export default {
       console.log('event: ',event)
       let images = event.target.children
       console.log(event.target.innerText)
-      for (let i = 0; i < images.length; i++) {
-        console.log(images[i].currentSrc)
+      for (let i = 0; i < this.formalUrls.length; i++) {
+        let base64 = this.formalUrls[i].replace('data:image/png;base64,','')
+        console.log(this.formalUrls[i])
+        image.imageToFile(base64)
       }
 
       if (event.ctrlKey){
@@ -352,8 +355,8 @@ ul{
   border: solid 0;
 }
 .area-text{
-  display: flex;
-  align-items: flex-end;
+  /*display: flex;*/
+  /*align-items: flex-end;*/
   padding: 10px;
   width: 869px;
   height:77px;

@@ -161,7 +161,7 @@ export default {
       this.chats = []
       this.click = true
       this.leftUserInfo = data
-      // console.log(this.leftUserInfo)
+      console.log('leftUserInfo',this.leftUserInfo)
       ipcRenderer.send('queryChats',[this.userInfo.id,this.leftUserInfo.userid])
       ipcRenderer.on('chats',((event, arg) => {
         // console.log('chats: ', arg)
@@ -232,8 +232,10 @@ export default {
       console.log(event.target.innerText)
       for (let i = 0; i < this.formalUrls.length; i++) {
         let base64 = this.formalUrls[i].replace('data:image/png;base64,','')
-        console.log(this.formalUrls[i])
-        image.imageToFile(base64)
+        let filename = 'LChat-'+this.userInfo.userName+'-'+new Date().getTime()+'-'+this.leftUserInfo.username
+        let result = image.imageToFile(base64,filename)
+        // console.log(result)
+        // image.imageToOss(result)
       }
 
       if (event.ctrlKey){

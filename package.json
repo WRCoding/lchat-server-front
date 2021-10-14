@@ -13,6 +13,7 @@
   },
   "main": "background.js",
   "dependencies": {
+    "ali-oss": "^6.16.0",
     "ant-design-vue": "^1.7.5",
     "aws-sdk": "^2.991.0",
     "axios": "^0.21.1",

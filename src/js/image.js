@@ -30,7 +30,6 @@ export default {
 
         })
         client.put('lchatimage/'+imageFileName, dataBuffer);
-        return {imageFileName, imageFilePath}
     },
 
 }

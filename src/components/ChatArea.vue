@@ -16,13 +16,17 @@
                 <div style="margin-top: 4px" v-for="chat in chats">
                   <p class="chatBox-time" >{{time(chat.msgSeq)}}</p>
                   <div v-bind:class="{'chatBox-left-li': chat.from === leftUserInfo.userid,'chatBox-right-li': chat.from === userInfo.id}">
-                    <p v-if="chat.from === userInfo.id" class="chatBox-right-text">
+                    <p v-if="chat.msgType === 'TEXT' && chat.from === userInfo.id" class="chatBox-right-text">
                       {{chat.message}}
                     </p>
+                    <img v-if="chat.msgType === 'IMAGE' && chat.from === userInfo.id" :src="getUrl(chat.message)"
+                         class="chatBox-img-right">
                     <a-avatar v-if="chat.from === leftUserInfo.userid" shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
                     <a-avatar v-if="chat.from === userInfo.id" shape="square" class="chatBox-avatar" :src="userInfo.avatar" :size="40"/>
-                    <p v-if="chat.from === leftUserInfo.userid" class="chatBox-left-text">{{chat.message}}</p>
-                    <img v-if="chat.msgType === 'IMAGE'" src="https://lpepsi.oss-cn-shenzhen.aliyuncs.com/avatar.jpg" class="chatBox-img-left">
+                    <p v-if="chat.msgType === 'TEXT' && chat.from === leftUserInfo.userid" class="chatBox-left-text">{{chat.message}}</p>
+                    <img v-if="chat.msgType === 'IMAGE' && chat.from === leftUserInfo.userid" :src="getUrl(chat.message)"
+                         class="chatBox-img-left">
+
                   </div>
                 </div>
               </a-space>
@@ -36,7 +40,7 @@
                 </a-upload>
               </div>
               <div style="width: 100%">
-                <div v-viewer="options" contenteditable="true" v-model="chat" class="area-text"  v-on:keyup.ctrl.86="paste()" @keydown.enter="handleKeyCode($event) ">
+                <div v-viewer="options" ref="areatext" contenteditable="true" v-model="chat" class="area-text"  v-on:keyup.ctrl.86="paste()" @keydown.enter="handleKeyCode($event) ">
                     <template v-for="(image,index) in pasteUrls">
                       <img
                           :src="image.source" class="image" :key="index"
@@ -151,8 +155,6 @@ export default {
     }
   },
   created() {
-    this._day = dayjs
-    this.init()
     ipcRenderer.on('receive',(event,arg) => {
       this.chats.push(JSON.parse(arg.toString()))
       ipcRenderer.send('saveChat',arg)
@@ -172,8 +174,20 @@ export default {
       this.toInfo = true
       this.friendInfo = data
     })
+    this.init()
   },
   methods: {
+    init(){
+      this.userInfo = this.$store.getters.getInfo
+      this.db = this.$store.getters.getDB
+      this._day = dayjs
+    },
+    getUrl(message){
+      console.log(message)
+      let ossUrl = 'https://lchat-server.oss-cn-shenzhen.aliyuncs.com/' + message
+      console.log(ossUrl)
+      return ossUrl
+    },
     getMessage(event){
       console.log(event)
     },
@@ -219,45 +233,67 @@ export default {
       }
 
     },
-    init(){
-      this.userInfo = this.$store.getters.getInfo
-      this.db = this.$store.getters.getDB
-    },
     showCard() {
       this.openCard = true
     },
     handleKeyCode(event){
       console.log('event: ',event)
-      let images = event.target.children
-      console.log(event.target.innerText)
-      for (let i = 0; i < this.formalUrls.length; i++) {
-        let base64 = this.formalUrls[i].replace('data:image/png;base64,','')
-        let filename = 'LChat-'+this.userInfo.userName+'-'+new Date().getTime()+'-'+this.leftUserInfo.username
-        let result = image.imageToFile(base64,filename)
-        // console.log(result)
-        // image.imageToOss(result)
+      event.preventDefault()
+      if (event.target.childNodes.length === 0){
+            this.tip = true
+            setTimeout( () => {
+              this.tip = false
+            },2500)
+      }else{
+        let message = event.target.innerText
+        console.log('message: '+message)
+        if (message.length > 0){
+          let segment = {}
+          segment.msgSeq = new Date().getTime()
+          segment.from = this.userInfo.id
+          segment.to = this.leftUserInfo.userid
+          segment.message = message
+          segment.msgType = 'TEXT'
+          this.chats.push(segment)
+          console.log(segment)
+          // ipcRenderer.send('sendMsg',JSON.stringify(segment)  + '\n')
+        }
+        for (let i = 0; i < this.formalUrls.length; i++) {
+          let base64 = this.formalUrls[i].replace('data:image/png;base64,','')
+          let filename = 'LChat-'+this.userInfo.userName+'-'+new Date().getTime()+'-'+this.leftUserInfo.username
+          let result = image.imageToFile(base64,filename)
+          let segment = {}
+          segment.msgSeq = new Date().getTime()
+          segment.from = this.userInfo.id
+          segment.to = this.leftUserInfo.userid
+          segment.message = filename
+          segment.msgType = 'IMAGE'
+          console.log(segment)
+          ipcRenderer.send('sendMsg',JSON.stringify(segment)  + '\n')
+        }
+        event.target.innerHTML = ''
       }
 
-      if (event.ctrlKey){
-        let content = this.chat
-        this.chat = content + '\n'
-      }else {
-        const data = {'msgSeq': new Date().getTime(), 'from': this.userInfo.id, 'to': this.leftUserInfo.userid,'msgType': 'TEXT'};
-        event.preventDefault()
-        let content = this.chat.trim()
-        if (content.length === 0){
-          this.tip = true
-          setTimeout( () => {
-            this.tip = false
-          },2500)
-        }else {
-          data.message = this.chat
-          this.chats.push(data)
-          ipcRenderer.send('sendMsg',JSON.stringify(data)  + '\n')
-        }
-        this.chat = ''
-      }
+      // if (event.ctrlKey){
+      //   let content = this.chat
+      //   this.chat = content + '\n'
+      // }else {
+      //
+      //   let content = this.chat.trim()
+      //   if (content.length === 0){
+      //     this.tip = true
+      //     setTimeout( () => {
+      //       this.tip = false
+      //     },2500)
+      //   }else {
+      //
+      //   }
+      //   this.chat = ''
+      // }
+
+
     }
+
   }
 }
 </script>
@@ -357,8 +393,7 @@ ul{
   border: solid 0;
 }
 .area-text{
-  /*display: flex;*/
-  /*align-items: flex-end;*/
+
   padding: 10px;
   width: 869px;
   height:77px;

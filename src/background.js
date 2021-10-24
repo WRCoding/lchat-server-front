@@ -3,6 +3,9 @@ import net from 'net'
 import {sqliteDB} from './js/db'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
+import image from "./js/image";
+import parse from "./js/parse";
+const nativeImage = require('electron').nativeImage
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -124,14 +127,35 @@ ipcMain.on('logout',(event,arg) => {
 })
 ipcMain.on('sendMsg',(event,arg) => {
   writeToServer(arg.toString())
-  saveChat(arg)
+})
+ipcMain.on('downLoadOss',(event,arg) => {
+  let msg = JSON.parse(arg.toString())
+  if (msg.msgType === 'IMAGE'){
+    console.log('downLoadOss: ',msg.message)
+    image.downloadImage(msg.message).then((data) => {
+      console.log(data)
+      if (data.res.status === 200){
+        let msgArray = msg.message.split('-')
+        let size = {width: msgArray[3],height: msgArray[4]}
+        let name = msg.message.split('/')[1]
+        let localFilePath = process.cwd()+'\\receiveImage\\'+name
+        console.log('localFilePath: ',localFilePath)
+        let image = nativeImage.createFromPath(localFilePath)
+        let dataUrl = image.toDataURL()
+        let parseData = size.width+'_'+size.height+'_'+dataUrl
+        win.webContents.send('dataUrl',parseData)
+      }
+    })
+  }else if (msg.msgType === 'TEXT'){
+    win.webContents.send('dataUrl',msg.message)
+  }
+
 })
 ipcMain.on('saveChat',(event,arg) => {
-  saveChat(arg)
+  saveChat(JSON.parse(arg))
 })
 function saveChat(msg){
-  let message = JSON.parse(msg)
-  let data = [message.msgSeq,message.from,message.to,message.message,message.msgType]
+  let data = [msg.msgSeq,msg.from,msg.to,msg.message,msg.msgType]
   let insertSql = 'insert into lchat_message values (?,?,?,?,?)'
   db.insertData(insertSql,data)
 }

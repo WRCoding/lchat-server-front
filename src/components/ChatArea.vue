@@ -119,6 +119,7 @@
 <script>
 import {eventBus} from '../main'
 import { ipcRenderer } from 'electron'
+const nativeImage = require('electron').nativeImage
 import image from '../js/image'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
@@ -151,14 +152,10 @@ export default {
       dbFile: '',
       db: null,
       pasteUrls: [],
-      formalUrls: []
+      message: ''
     }
   },
   created() {
-    ipcRenderer.on('receive',(event,arg) => {
-      this.chats.push(JSON.parse(arg.toString()))
-      ipcRenderer.send('saveChat',arg)
-    })
     eventBus.$on('click', (data) => {
       this.chats = []
       this.click = true
@@ -166,7 +163,6 @@ export default {
       console.log('leftUserInfo',this.leftUserInfo)
       ipcRenderer.send('queryChats',[this.userInfo.id,this.leftUserInfo.userid])
       ipcRenderer.on('chats',((event, arg) => {
-        // console.log('chats: ', arg)
         this.chats = arg
       }))
     })
@@ -178,15 +174,31 @@ export default {
   },
   methods: {
     init(){
+      let temp;
+      //这里可以记笔记,不能再on里面连续使用send ,on
+      ipcRenderer.on('receive',(event,arg) => {
+        temp = JSON.parse(arg.toString())
+          ipcRenderer.send('downLoadOss',arg.toString())
+      })
+      ipcRenderer.on('dataUrl', ((event,arg) => {
+        temp.message = arg.toString()
+        ipcRenderer.send('saveChat',JSON.stringify(temp))
+        this.chats.push(temp)
+      }))
       this.userInfo = this.$store.getters.getInfo
       this.db = this.$store.getters.getDB
       this._day = dayjs
     },
-    getUrl(message){
-      console.log(message)
-      let ossUrl = 'https://lchat-server.oss-cn-shenzhen.aliyuncs.com/' + message
-      console.log(ossUrl)
-      return ossUrl
+    getUrl(parseData){
+      let parseDataArray = parseData.split('_')
+      let dataUrl = parseDataArray[2]
+      let image = nativeImage.createFromDataURL(dataUrl)
+      let width = image.getSize().width
+      let height = image.getSize().height
+      width = parseDataArray[0]
+      height = parseDataArray[1]
+      let resizeImage = image.resize({width:parseInt(parseDataArray[0]),height:parseInt(parseDataArray[1]),quality: 'better'})
+      return resizeImage.toDataURL()
     },
     getMessage(event){
       console.log(event)
@@ -200,18 +212,24 @@ export default {
     paste(){
       if (!clipboard.readImage().isEmpty()){
         let image = clipboard.readImage()
-        this.formalUrls.push(image.toDataURL())
         console.log(image.getSize())
         console.log(image.getAspectRatio())
         let width = image.getSize().width
         let height = image.getSize().height
         let ratio = image.getAspectRatio()
-        let reSizeHeight = height/ratio
-        console.log('width: '+width+' height: '+reSizeHeight)
-        let resizeImage = image.resize({width:100,height:50,quality: 'good'})
+        if (ratio >= 1 && ratio <= 2){
+          width = 150
+          height = 100
+        }else if (ratio < 1){
+          width = 50
+          height = 100
+        }else{
+          width = 100
+          height = 50
+        }
+        let resizeImage = image.resize({width:width,height:height,quality: 'good'})
         console.log(resizeImage.getSize())
-        console.log(resizeImage.getAspectRatio())
-        this.pasteUrls.push({thumbnail:image.toDataURL(),source:resizeImage.toDataURL()})
+        this.pasteUrls.push({thumbnail:image.toDataURL(),source:resizeImage.toDataURL(),size:{width,height}})
       }else{
         console.log(clipboard.readText())
       }
@@ -237,7 +255,6 @@ export default {
       this.openCard = true
     },
     handleKeyCode(event){
-      console.log('event: ',event)
       event.preventDefault()
       if (event.target.childNodes.length === 0){
             this.tip = true
@@ -254,44 +271,39 @@ export default {
           segment.to = this.leftUserInfo.userid
           segment.message = message
           segment.msgType = 'TEXT'
-          this.chats.push(segment)
-          console.log(segment)
-          // ipcRenderer.send('sendMsg',JSON.stringify(segment)  + '\n')
-        }
-        for (let i = 0; i < this.formalUrls.length; i++) {
-          let base64 = this.formalUrls[i].replace('data:image/png;base64,','')
-          let filename = 'LChat-'+this.userInfo.userName+'-'+new Date().getTime()+'-'+this.leftUserInfo.username
-          let result = image.imageToFile(base64,filename)
-          let segment = {}
-          segment.msgSeq = new Date().getTime()
-          segment.from = this.userInfo.id
-          segment.to = this.leftUserInfo.userid
-          segment.message = filename
-          segment.msgType = 'IMAGE'
           console.log(segment)
           ipcRenderer.send('sendMsg',JSON.stringify(segment)  + '\n')
+          ipcRenderer.send('saveChat',JSON.stringify(segment))
+          this.chats.push(segment)
+        }
+        for (let i = 0; i < this.pasteUrls.length; i++) {
+          console.log(this.pasteUrls)
+          let dataUrl = this.pasteUrls[i].thumbnail
+          let base64 = dataUrl.replace('data:image/png;base64,','')
+          let size = this.pasteUrls[i].size
+          let filename = 'LChat-'+this.userInfo.userName+'-'+new Date().getTime()+'-'+size.width+'-'+size.height+'-'+this.leftUserInfo.username
+          let success = image.imageToFile(base64,filename)
+          success.then((data) => {
+            console.log('success: ',data)
+            if (data){
+              let segment = {}
+              segment.msgSeq = new Date().getTime()
+              segment.from = this.userInfo.id
+              segment.to = this.leftUserInfo.userid
+              segment.message = filename
+              segment.msgType = 'IMAGE'
+              console.log(segment)
+              ipcRenderer.send('sendMsg',JSON.stringify(segment)  + '\n')
+              segment.message = size.width + '_' + size.height + '_' + dataUrl
+              segment.method = 'image'
+              ipcRenderer.send('saveChat',JSON.stringify(segment))
+              this.chats.push(segment)
+            }
+          })
         }
         event.target.innerHTML = ''
+        this.pasteUrls = []
       }
-
-      // if (event.ctrlKey){
-      //   let content = this.chat
-      //   this.chat = content + '\n'
-      // }else {
-      //
-      //   let content = this.chat.trim()
-      //   if (content.length === 0){
-      //     this.tip = true
-      //     setTimeout( () => {
-      //       this.tip = false
-      //     },2500)
-      //   }else {
-      //
-      //   }
-      //   this.chat = ''
-      // }
-
-
     }
 
   }
@@ -410,15 +422,15 @@ ul{
   border-radius: 5px;
   display: inline-block;
   margin-left: 10px;
-  width:100px;
-  height:200px
+  /*width:100px;*/
+  /*height:200px*/
 }
 .chatBox-img-right{
   border-radius: 5px;
   display: inline-block;
   margin-right: 10px;
-  width:100px;
-  height:200px
+  /*width:100px;*/
+  /*height:200px*/
 }
 .chatBox-avatar{
   display: inline-block;

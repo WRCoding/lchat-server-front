@@ -129,7 +129,6 @@ export default {
     ipcRenderer.on('receive',(event,arg) => {
       this.action = 1
       let message = JSON.parse(arg.toString())
-      console.log('message : ',message)
       let exist = this.sessionList.some(session => {
         if (session.userid === message.from){
           session.msgSeq = message.msgSeq
@@ -146,7 +145,6 @@ export default {
           }
         })
       }
-      console.log('sessionList: ',this.sessionList)
       this.sessionList.sort((session_1,session_2) => {
         return session_2.msgSeq-session_1.msgSeq
       })

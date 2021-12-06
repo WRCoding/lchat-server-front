@@ -15,16 +15,16 @@
               <a-space direction="vertical" style="width: 100%">
                 <div style="margin-top: 4px" v-for="chat in chats">
                   <p class="chatBox-time" >{{time(chat.msgSeq)}}</p>
-                  <div v-bind:class="{'chatBox-left-li': chat.from === leftUserInfo.userid,'chatBox-right-li': chat.from === userInfo.id}">
-                    <p v-if="chat.msgType === 'TEXT' && chat.from === userInfo.id" class="chatBox-right-text">
+                  <div v-bind:class="{'chatBox-left-li': chat.from === leftUserInfo.lcid,'chatBox-right-li': chat.from === userInfo.lcid}">
+                    <p v-if="chat.msgType === 'TEXT' && chat.from === userInfo.lcid" class="chatBox-right-text">
                       {{chat.message}}
                     </p>
-                    <img v-if="chat.msgType === 'IMAGE' && chat.from === userInfo.id" :src="getUrl(chat.message)"
+                    <img v-if="chat.msgType === 'IMAGE' && chat.from === userInfo.lcid" :src="getUrl(chat.message)"
                          class="chatBox-img-right">
-                    <a-avatar v-if="chat.from === leftUserInfo.userid" shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
-                    <a-avatar v-if="chat.from === userInfo.id" shape="square" class="chatBox-avatar" :src="userInfo.avatar" :size="40"/>
-                    <p v-if="chat.msgType === 'TEXT' && chat.from === leftUserInfo.userid" class="chatBox-left-text">{{chat.message}}</p>
-                    <img v-if="chat.msgType === 'IMAGE' && chat.from === leftUserInfo.userid" :src="getUrl(chat.message)"
+                    <a-avatar v-if="chat.from === leftUserInfo.lcid" shape="square" class="chatBox-avatar" :src="leftUserInfo.avatar" :size="40"/>
+                    <a-avatar v-if="chat.from === userInfo.lcid" shape="square" class="chatBox-avatar" :src="userInfo.avatar" :size="40"/>
+                    <p v-if="chat.msgType === 'TEXT' && chat.from === leftUserInfo.lcid" class="chatBox-left-text">{{chat.message}}</p>
+                    <img v-if="chat.msgType === 'IMAGE' && chat.from === leftUserInfo.lcid" :src="getUrl(chat.message)"
                          class="chatBox-img-left">
 
                   </div>
@@ -156,12 +156,13 @@ export default {
     }
   },
   created() {
+    this.chats = []
     eventBus.$on('click', (data) => {
       this.chats = []
       this.click = true
       this.leftUserInfo = data
       console.log('leftUserInfo',this.leftUserInfo)
-      ipcRenderer.send('queryChats',[this.userInfo.id,this.leftUserInfo.userid])
+      ipcRenderer.send('queryChats',[this.userInfo.lcid,this.leftUserInfo.lcid])
       ipcRenderer.on('chats',((event, arg) => {
         this.chats = arg
       }))
@@ -176,10 +177,12 @@ export default {
     init(){
       let temp;
       //这里可以记笔记,不能再on里面连续使用send ,on
+      //这里接收到消息后，去判断是否是图片，如果是图片，把图片下载下来
       ipcRenderer.on('receive',(event,arg) => {
         temp = JSON.parse(arg.toString())
-          ipcRenderer.send('downLoadOss',arg.toString())
+        ipcRenderer.send('downLoadOss',[1,arg.toString()])
       })
+      //图片下载下来后，生成dataUrl存在消息体中，接着保存
       ipcRenderer.on('dataUrl', ((event,arg) => {
         temp.message = arg.toString()
         ipcRenderer.send('saveChat',JSON.stringify(temp))
@@ -267,8 +270,8 @@ export default {
         if (message.length > 0){
           let segment = {}
           segment.msgSeq = new Date().getTime()
-          segment.from = this.userInfo.id
-          segment.to = this.leftUserInfo.userid
+          segment.from = this.userInfo.lcid
+          segment.to = this.leftUserInfo.lcid
           segment.message = message
           segment.msgType = 'TEXT'
           console.log(segment)
@@ -288,8 +291,8 @@ export default {
             if (data){
               let segment = {}
               segment.msgSeq = new Date().getTime()
-              segment.from = this.userInfo.id
-              segment.to = this.leftUserInfo.userid
+              segment.from = this.userInfo.lcid
+              segment.to = this.leftUserInfo.lcid
               segment.message = filename
               segment.msgType = 'IMAGE'
               console.log(segment)

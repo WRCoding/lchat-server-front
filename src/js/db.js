@@ -17,12 +17,12 @@ db.sqliteDB = function (file){
     db.database.serialize(() => {
         let sql = `
             CREATE TABLE IF NOT EXISTS "lchat_friend" (
-              "userid" text NOT NULL,
+              "lcid" text NOT NULL,
               "username" blob,
               "avatar" text,
               "background" text,
               "description" text,
-              PRIMARY KEY ("userid")
+              PRIMARY KEY ("lcid")
             );
         `
         db.database.run(sql,() => {

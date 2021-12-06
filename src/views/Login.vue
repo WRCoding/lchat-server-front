@@ -33,13 +33,14 @@ export default {
       console.log({userName,password})
       user.login({userName,password}).then(response => {
         let result = response.data
+        console.log(result)
         if (result.code === 200){
           let userInfo = result.data
           this.$store.commit('setInfo',userInfo)
           // this.createDB(userInfo)
           this.clearInput()
-          let data = {'msgSeq': new Date().getTime(), 'from': userInfo.id, 'to': 'server','message':'', 'msgType': 'INIT'};
-          data = userName + '*' +JSON.stringify(data)
+          let data = {'msgSeq': new Date().getTime(), 'from': userInfo.lcid, 'to': 'server','message':'', 'type': 'INIT'};
+          data = userName + '*' +JSON.stringify(data) + '\n'
           ipcRenderer.send('login',data)
           ipcRenderer.on('success',((event,arg) => {
             this.$router.push('/index')
@@ -49,28 +50,11 @@ export default {
           this.clearInput()
         }
       })
-
     },
     clearInput(){
       this.userName = ''
       this.password = ''
-    },
-    // createDB(userInfo) {
-    //   let dbFile = userInfo.userName + '.db'
-    //   let db = new sqliteDB(dbFile)
-    //   let sql = `
-    //         CREATE TABLE IF NOT EXISTS "lchat_friend" (
-    //           "userid" text NOT NULL,
-    //           "username" blob,
-    //           "avatar" text,
-    //           "background" text,
-    //           "description" text,
-    //           PRIMARY KEY ("userid")
-    //         );
-    //   `
-    //   db.createTable(sql)
-    //   this.$store.commit('setDB',db)
-    // }
+    }
   }
 }
 </script>

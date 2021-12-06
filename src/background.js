@@ -5,6 +5,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import image from "./js/image";
 import parse from "./js/parse";
+import sql from "./js/sql"
 const nativeImage = require('electron').nativeImage
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // Scheme must be registered before the app is ready
@@ -121,15 +122,16 @@ ipcMain.on('logout',(event,arg) => {
   win.setMaximumSize(500,300)
   win.setSize(500,300)
   win.center()
-  const data = {'msgSeq': new Date().getTime(), 'from': arg, 'to': 'server','msgType': 'QUIT'};
-  socket.end(JSON.stringify(data))
+  const data = {'msgSeq': new Date().getTime(), 'from': arg, 'to': 'server','type': 'QUIT'};
+  socket.end(JSON.stringify(data) + '\n')
   event.sender.send('successLogout','to index')
 })
 ipcMain.on('sendMsg',(event,arg) => {
   writeToServer(arg.toString())
 })
 ipcMain.on('downLoadOss',(event,arg) => {
-  let msg = JSON.parse(arg.toString())
+  console.log(arg)
+  let msg = JSON.parse(arg[1].toString())
   if (msg.msgType === 'IMAGE'){
     console.log('downLoadOss: ',msg.message)
     image.downloadImage(msg.message).then((data) => {
@@ -143,17 +145,33 @@ ipcMain.on('downLoadOss',(event,arg) => {
         let image = nativeImage.createFromPath(localFilePath)
         let dataUrl = image.toDataURL()
         let parseData = size.width+'_'+size.height+'_'+dataUrl
-        win.webContents.send('dataUrl',parseData)
+        if (arg[0] === 1){
+          win.webContents.send('dataUrl',parseData)
+        }else{
+          win.webContents.send('OffLineDataUrl',parseData)
+        }
       }
     })
   }else if (msg.msgType === 'TEXT'){
-    win.webContents.send('dataUrl',msg.message)
+    if (arg[0] === 1){
+      win.webContents.send('dataUrl',msg.message)
+    }else{
+      win.webContents.send('OffLineDataUrl',msg.message)
+    }
   }
 
 })
 ipcMain.on('saveChat',(event,arg) => {
   saveChat(JSON.parse(arg))
+  event.returnValue = 'done'
 })
+
+ipcMain.on('getSessions',((event, args) => {
+  let sessionSql = sql.getSession(args.toString())
+  db.queryData(sessionSql,((data) => {
+    win.webContents.send('sessionsCallBack',data)
+  }))
+}))
 function saveChat(msg){
   let data = [msg.msgSeq,msg.from,msg.to,msg.message,msg.msgType]
   let insertSql = 'insert into lchat_message values (?,?,?,?,?)'

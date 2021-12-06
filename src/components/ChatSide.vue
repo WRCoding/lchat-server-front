@@ -5,6 +5,7 @@
                   style="margin-top: 30px;margin-left: 10px" @click="showUserInfo()"/>
         <a-icon type="message" class="action-side" v-bind:class="{'action-click': changeAction === 1,'action-former': changeAction !==1}" @click="actionChange(1)"/>
         <a-icon type="user" class="action-side" v-bind:class="{'action-click': changeAction === 2,'action-former': changeAction !==2}" @click="actionChange(2)"/>
+        <a-icon type="team" class="action-side" v-bind:class="{'action-click': changeAction === 3,'action-former': changeAction !==3}" @click="actionChange(3)"/>
       </a-space>
       <!--个人信息-->
       <a-drawer
@@ -126,6 +127,7 @@ export default {
     })
   },
   methods: {
+    //跳转到指定tab,1为会话列表tab,2为好友列表tab,3为群聊会话列表tab
     actionChange(val){
       this.changeAction = val
       eventBus.$emit('changeAction', this.changeAction)
@@ -147,7 +149,7 @@ export default {
       fr.readAsDataURL(_this.imgObj);                   //将读取到的文件编码成Data URL
       let formData = new FormData()
       formData.append('file', _this.imgObj)
-      formData.append('userId', this.$store.getters.getInfo.id)
+      formData.append('lcid', this.$store.getters.getInfo.lcid)
       formData.append('flag', this.flag)
       user.uploadFile(formData).then(response => {
         let result = response.data
@@ -207,7 +209,7 @@ export default {
       this.isEditName = true
     },
     logout() {
-      ipcRenderer.send('logout', this.userInfo.id)
+      ipcRenderer.send('logout', this.userInfo.lcid)
       ipcRenderer.on('successLogout', (() => {
         this.$router.push('/')
         this.$store.commit('deleteInfo')

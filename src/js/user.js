@@ -30,5 +30,11 @@ export default {
             url: '/user/search?key='+data,
             method: 'get'
         })
+    },
+    offlineMsg(data){
+        return request({
+            url: '/message/offline/message/'+data,
+            method: 'get'
+        })
     }
 }

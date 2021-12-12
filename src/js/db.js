@@ -42,7 +42,32 @@ db.sqliteDB = function (file){
         db.database.run(sql,() => {
         })
     })
-
+    //群聊成员信息
+    db.database.serialize(() => {
+        let sql = `
+            CREATE TABLE IF NOT EXISTS "lchat_group_member" (
+              "group_id" text,
+              "group_member_lcid" text,
+              "username" text,
+              "avatar" text
+            );
+        `
+        db.database.run(sql,() => {
+        })
+    })
+    //
+    db.database.serialize(() => {
+        let sql = `
+            CREATE TABLE IF NOT EXISTS "lchat_group_info" (
+              "group_creator" text,
+              "group_id" text,
+              "group_name" text,
+              "group_owner" text
+            );
+        `
+        db.database.run(sql,() => {
+        })
+    })
 };
 
 db.printErrorInfo = function (err){

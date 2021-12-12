@@ -165,6 +165,11 @@ ipcMain.on('saveChat',(event,arg) => {
   saveChat(JSON.parse(arg))
   event.returnValue = 'done'
 })
+function saveChat(msg){
+  let data = [msg.msgSeq,msg.from,msg.to,msg.message,msg.msgType]
+  let insertSql = 'insert into lchat_message values (?,?,?,?,?)'
+  db.insertData(insertSql,data)
+}
 
 ipcMain.on('getSessions',((event, args) => {
   let sessionSql = sql.getSession(args.toString())
@@ -172,11 +177,35 @@ ipcMain.on('getSessions',((event, args) => {
     win.webContents.send('sessionsCallBack',data)
   }))
 }))
-function saveChat(msg){
-  let data = [msg.msgSeq,msg.from,msg.to,msg.message,msg.msgType]
-  let insertSql = 'insert into lchat_message values (?,?,?,?,?)'
-  db.insertData(insertSql,data)
+ipcMain.on('insertGroupInfo',(((event, args) => {
+  console.log(args.toString())
+  let data = JSON.parse(args.toString())
+  insertGroupInfo(data)
+  event.returnValue = 'done'
+})))
+function insertGroupInfo(data){
+  let groupInfo = [data.groupCreator,data.groupId,data.groupName,data.groupCreator]
+  console.log(groupInfo)
+  let sql = 'insert into lchat_group_info values (?,?,?,?)'
+  db.insertData(sql,groupInfo)
 }
+
+ipcMain.on('insertGroupMember',(((event, args) => {
+  insertGroupMember(args)
+  event.returnValue = 'done'
+})))
+function insertGroupMember(data){
+  let sql = 'insert into lchat_group_member values (?,?,?,?)'
+  db.insertData(sql,data)
+}
+
+ipcMain.on('queryGroup',(((event, args) => {
+  let sql = 'select * from lchat_group_info'
+  db.queryData(sql,((data) => {
+    event.returnValue = data
+  }))
+})))
+
 function writeToServer(msg){
   socket.write(msg,()=>{
     console.log('发送成功')

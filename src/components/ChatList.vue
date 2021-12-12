@@ -47,10 +47,7 @@
       </a-col>
       <!--群聊列表-->
       <a-col v-if="action === 3" class="chat-list" style="background-color: rgb(228, 228, 229);height:650px;max-height: 650px;display: block;cursor: pointer">
-        <div class="chat-list-card" @click="toInfo(item)" style="width: 300px;background-color: rgb(232, 231, 230);padding: 10px 5px;display: flex;align-items: center" v-for="item in friendList">
-          <a-avatar :size="45" shape="square" :src="item.avatar" />
-          <span style="margin-left: 20px"><b style="font-size: 20px">{{item.username}}</b></span>
-        </div>
+        <group :groupList="groupList"  @toGroupChat="toGroupChat"></group>
       </a-col>
     </a-row>
     <a-divider type="vertical"/>
@@ -82,7 +79,7 @@
       </a-card>
     </a-modal>
     <!--创建群聊的modal    -->
-    <a-modal v-model="addGroupVisible" :footer="null" centered width=600px>
+    <a-modal v-model="addGroupVisible" :footer="null" :maskClosable="false" :afterClose="closeGroupVisible" centered width=600px>
       <a-row>
         <a-col :span="12" id="unSelectedUser-Group-Col" style="width: 275px;height: 480px;border-right: 1px solid rgb(241, 241, 241)">
           <div style="margin-bottom: 10px;height: 50px">
@@ -120,7 +117,6 @@
           </div>
           <div style="position:absolute;bottom: 0px;right: 0px;">
             <a-button id="confirm-Group" v-if="keys.length > 0" @click="openGroupNameModal()">确定</a-button>
-            <a-button id="cancel-Group">取消</a-button>
           </div>
         </a-col>
       </a-row>
@@ -129,7 +125,7 @@
     <a-modal v-model="groupNameModal" :footer="null" centered >
       <div>
         <span>请输入群名称</span>
-        <a-input style="margin-top: 7px"></a-input>
+        <a-input style="margin-top: 7px" v-model="groupName"></a-input>
       </div>
       <div style="margin-top:7px">
         <span>邀请: </span>
@@ -146,9 +142,11 @@
 </template>
 
 <script>
+import Group from '../components/Group'
 import {eventBus} from '../main'
 import { ipcRenderer } from 'electron'
 import user from '../js/user'
+import group from '../js/group'
 import friend from '../js/friend'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
@@ -158,12 +156,19 @@ dayjs.locale('zh-cn')
 dayjs.extend(isYesterday)
 dayjs.extend(isToday)
 export default {
+  components:{
+    group:Group
+  },
   name: "chat-list",
   data() {
     return {
+      //群聊名称
+      groupName: '',
       groupNameModal: false,
       //创建群聊时,选择的用户列表
       keys: [],
+      //选择群用户的lcid
+      groupMembers: [],
       _day: '',
       visible: false,
       addGroupVisible: false,
@@ -186,7 +191,11 @@ export default {
     this.friendList = []
     this._day = dayjs
     let lcid = this.$store.getters.getInfo.lcid
+    //获取好友信息,并更新好友信息
     this.queryFriends()
+    //todo 获取群聊信息和群聊成员信息
+
+    //
     ipcRenderer.on('friendsInfo',((event, args) => {
       this.friendList = args
       console.log('friendLlist: ',this.friendList)
@@ -242,12 +251,50 @@ export default {
     })
   },
   methods: {
+    toGroupChat(data){
+      console.log('toGroupChat: ',data)
+    },
+    //关闭创建群聊modal
+    closeGroupVisible(){
+      this.addGroupVisible = false
+      this.keys = []
+      this.groupMembers = []
+    },
     //创建群聊
-    createGroup(){
+    createGroup() {
       //todo 调用API保存群聊信息
-
-      //todo 创建成功,切换到群聊会话tab,生成会话框
-      this.action = 3
+      // this.groupMembers.unshift(this.$store.getters.getInfo.lcid)
+      let data = {"groupName": this.groupName,"groupCreator":this.$store.getters.getInfo.lcid,"groupMembers":this.groupMembers}
+      console.log('createGroup: ',data)
+      group.save(data).then((response) => {
+        let data = response.data.data
+        let parseData = JSON.stringify(data).toString()
+        let groupId = data.groupId
+        console.log(groupId)
+        //todo 更新本地群聊信息
+        if (response.data.code === 200){
+          let returnValue = ipcRenderer.sendSync('insertGroupInfo',parseData)
+          group.members(groupId).then(repsone => {
+            let memberList = repsone.data.data
+            console.log('memberList: ',memberList)
+            for (let i = 0; i < memberList.length;) {
+              let array = [groupId,memberList[i].lcid,memberList[i].userName,memberList[i].avatar]
+              console.log('member array: ',array)
+              let result = ipcRenderer.sendSync('insertGroupMember',array)
+              if (result === 'done'){
+                i++;
+              }
+            }
+            let data = ipcRenderer.sendSync('queryGroup','query')
+            this.groupList = data
+            console.log('queryGroup: ',this.groupList)
+            //todo 创建成功,切换到群聊会话tab,生成会话框
+            this.groupNameModal = false;
+            this.closeGroupVisible()
+            this.action = 3
+          })
+        }
+      })
     },
     //打开设置群聊名称的Modal
     openGroupNameModal(){
@@ -261,12 +308,14 @@ export default {
         this.keys=this.keys.filter((ele) => ele !== index);
       }else{
         this.keys.push(index);
+        this.groupMembers.push(index.lcid);
       }
       console.log(this.keys.length)
     },
     removeIndex(index){
       this.keys=this.keys.filter((ele) => ele !== index);
     },
+    //获取离线消息包括群聊的
     getOffLine(id) {
       user.offlineMsg(id).then(response => {
         console.log(response.data)

@@ -36,7 +36,8 @@ db.sqliteDB = function (file){
               "from" text,
               "to" text,
               "message" text,
-              "msgType" text
+              "msgType" text,
+              "type" text
             );
         `
         db.database.run(sql,() => {
@@ -79,13 +80,14 @@ db.sqliteDB.prototype.createTable =  (sql) => {
         db.database.run(sql,(err) => {
             if (null != err){
                 db.printErrorInfo(err)
-                return;
+
             }
         })
     })
 }
 
 db.sqliteDB.prototype.insertDataBatch = (sql, object) => {
+    console.log('我被执行啦')
     db.database.serialize(() => {
         const stmt = db.database.prepare(sql);
         for (let i = 0; i<object.length; ++i){

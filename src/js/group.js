@@ -15,4 +15,10 @@ export default {
             method: 'get'
         })
     },
+    groupInfo(lcid){
+        return request({
+            url: '/group/groupInfo/'+lcid,
+            method: 'get'
+        })
+    },
 }

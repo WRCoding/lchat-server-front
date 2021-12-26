@@ -19,12 +19,6 @@ export default {
     groupList:{
       type: [],
       default: () => {return [
-        {
-          'groupName': '相亲相爱一家人'
-        },
-        {
-          'groupName': '数据平台组'
-        }
       ]}
     }
   },

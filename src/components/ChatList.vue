@@ -170,7 +170,6 @@ import friend from '../js/friend'
 import dayjs from 'dayjs'
 
 
-
 const isToday = require('dayjs/plugin/isToday');
 const isYesterday = require('dayjs/plugin/isYesterday');
 dayjs.locale('zh-cn')
@@ -240,36 +239,38 @@ export default {
       this.toChat(data)
     })
     ipcRenderer.on('receive', (event, arg) => {
-      this.action = 1
       let message = JSON.parse(arg.toString())
-      //判断接收到的消息是否在当前会话列表中
-      let exist = this.sessionList.some(session => {
-        if (session.lcid === message.from) {
-          session.msgSeq = message.msgSeq
-          session.newMsg = message.message
-          if (message.msgType === 'IMAGE') {
-            session.newMsg = '[ 图片 ]'
-          }
-          return true
-        }
-      })
-      //如果不在当前会话列表,则看是不是在好友列表中
-      if (!exist) {
-        this.friendList.some(friend => {
-          if (friend.userid === message.from) {
-            friend.msgSeq = message.msgSeq
-            friend.newMsg = message.message
+      if (message.type === 'SINGLE') {
+        this.action = 1
+        //判断接收到的消息是否在当前会话列表中
+        let exist = this.sessionList.some(session => {
+          if (session.lcid === message.from) {
+            session.msgSeq = message.msgSeq
+            session.newMsg = message.message
             if (message.msgType === 'IMAGE') {
-              friend.newMsg = '[ 图片 ]'
+              session.newMsg = '[ 图片 ]'
             }
-            this.sessionList.unshift(friend)
+            return true
           }
         })
+        //如果不在当前会话列表,则看是不是在好友列表中
+        if (!exist) {
+          this.friendList.some(friend => {
+            if (friend.userid === message.from) {
+              friend.msgSeq = message.msgSeq
+              friend.newMsg = message.message
+              if (message.msgType === 'IMAGE') {
+                friend.newMsg = '[ 图片 ]'
+              }
+              this.sessionList.unshift(friend)
+            }
+          })
+        }
+        //排序，让最新的在第一个
+        this.sessionList.sort((session_1, session_2) => {
+          return session_2.msgSeq - session_1.msgSeq
+        })
       }
-      //排序，让最新的在第一个
-      this.sessionList.sort((session_1, session_2) => {
-        return session_2.msgSeq - session_1.msgSeq
-      })
     })
   },
   methods: {

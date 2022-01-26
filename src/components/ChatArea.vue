@@ -33,7 +33,8 @@
                             :src="leftUserInfo.avatar" :size="40"/>
                   <a-avatar v-if="chat.from === userInfo.lcid" shape="square" class="chatBox-avatar"
                             :src="userInfo.avatar" :size="40"/>
-                  <p v-if="chat.msgType === 'TEXT' && chat.from === leftUserInfo.lcid" class="chatBox-left-text">{{ chat.message }}</p>
+                  <p v-if="chat.msgType === 'TEXT' && chat.from === leftUserInfo.lcid" class="chatBox-left-text">
+                    {{ chat.message }}</p>
                   <img v-if="chat.msgType === 'IMAGE' && chat.from === leftUserInfo.lcid" :src="getUrl(chat.message)"
                        class="chatBox-img-left">
                 </div>
@@ -43,30 +44,35 @@
                 <div v-if="groupChat.to === groupInfo.group_id">
                   <p class="chatBox-time">{{ time(groupChat.msgSeq) }}</p>
                   <div
-                      v-bind:class="{'chatBox-left-li': groupChat.from !== userInfo.lcid,'chatBox-right-li': chat.from === userInfo.lcid}">
-                    <p v-if="chat.msgType === 'TEXT' && chat.from === userInfo.lcid" class="chatBox-right-text">
+                      v-bind:class="{'chatBox-left-li': groupChat.from !== userInfo.lcid,'chatBox-right-li': groupChat.from === userInfo.lcid}">
+                    <p v-if="groupChat.msgType === 'TEXT' && groupChat.from === userInfo.lcid"
+                       class="chatBox-right-text">
                       {{ groupChat.message }}
                     </p>
-                    <img v-if="chat.msgType === 'IMAGE' && chat.from === userInfo.lcid" :src="getUrl(groupChat.message)"
+                    <img v-if="groupChat.msgType === 'IMAGE' && groupChat.from === userInfo.lcid"
+                         :src="getUrl(groupChat.message)"
                          class="chatBox-img-right">
                     <a-avatar v-if="groupChat.from !== userInfo.lcid" shape="square" class="chatBox-avatar"
                               :src="getGroupMemberAvatar(groupChat.from)" :size="40"/>
-                    <a-avatar v-if="chat.from === userInfo.lcid" shape="square" class="chatBox-avatar"
+                    <a-avatar v-if="groupChat.from === userInfo.lcid" shape="square" class="chatBox-avatar"
                               :src="userInfo.avatar" :size="40"/>
-                    <span v-if="chat.msgType === 'TEXT' && chat.from === leftUserInfo.lcid" style="display: inline-block">
-                      <p style="margin-left: 10px;margin-bottom: 0px;font-size: 12px;color: rgb(179, 179, 179)">{{getGroupMemberName(group.from)}}</p>
-                      <p class="chatBox-left-text">{{ chat.message }}</p>
+                    <span v-if="groupChat.msgType === 'TEXT' && groupChat.from !== userInfo.lcid"
+                          style="display: inline-block">
+                      <p style="margin-left: 10px;margin-bottom: 0px;font-size: 12px;color: rgb(179, 179, 179)">{{ getGroupMemberName(groupChat.from) }}</p>
+                      <p class="chatBox-left-text">{{ groupChat.message }}</p>
                     </span>
-                    <img v-if="chat.msgType === 'IMAGE' && groupChat.from !== userInfo.lcid"
-                         :src="getUrl(groupChat.message)"
-                         class="chatBox-img-left">
+                    <span v-if="groupChat.msgType === 'IMAGE' && groupChat.from !== userInfo.lcid" style="display: inline-block">
+                      <p style="margin-left: 10px;margin-bottom: 0px;font-size: 12px;color: rgb(179, 179, 179)">{{ getGroupMemberName(groupChat.from) }}</p>
+                      <img :src="getUrl(groupChat.message)" class="chatBox-img-left" />
+                    </span>
+
                   </div>
                 </div>
               </div>
             </a-space>
           </a-col>
           <!--消息发送区域-->
-          <a-col style="width: 100%">
+          <a-col style="width: 100%" @contextmenu="showMenu($event)">
             <div>
               <a-icon type="smile" style="font-size: 20px;margin-left: 17px;margin-top: 5px"></a-icon>
               <a-upload :before-upload="beforeUpload" list-type="picture">
@@ -75,7 +81,7 @@
             </div>
             <div style="width: 100%">
               <div v-viewer="options" ref="areatext" contenteditable="true" v-model="chat" class="area-text"
-                   v-on:keyup.ctrl.86="paste()" @keydown.enter="handleKeyCode($event) ">
+                   v-on:keydown.meta.86="paste()" @keydown.enter="handleKeyCode($event) ">
                 <template v-for="(image,index) in pasteUrls">
                   <img
                       :src="image.source" class="image" :key="index"
@@ -92,6 +98,7 @@
                 <button class="send-btn">发送</button>
               </a-tooltip>
             </div>
+            <vue-context-menu :contextMenuData="contextMenudata" @paste="paste"></vue-context-menu>
           </a-col>
         </a-row>
       </a-col>
@@ -198,7 +205,19 @@ export default {
       dbFile: '',
       db: null,
       pasteUrls: [],
-      message: ''
+      message: '',
+      contextMenudata: {
+        menuName: 'menu',
+        axis: {
+          x: null,
+          y: null
+        },
+        menulists: [{
+          fnHandler: 'paste',
+          btnName: '粘贴',
+          icoName: 'fa fa-home fa-fw'
+        }]
+      }
     }
   },
   created() {
@@ -209,17 +228,20 @@ export default {
       this.click = 1
       this.leftUserInfo = data
       console.log('leftUserInfo', this.leftUserInfo)
-      ipcRenderer.send('queryChats', [this.userInfo.lcid, this.leftUserInfo.lcid])
+      ipcRenderer.send('querySingleChats', [this.userInfo.lcid, this.leftUserInfo.lcid])
       ipcRenderer.on('chats', ((event, arg) => {
         this.chats = arg
       }))
     })
     eventBus.$on('groupChat', (data) => {
+      this.groupChats = []
       this.click = 2
       this.groupInfo = data
       let members = ipcRenderer.sendSync('queryGroupMembers', data.group_id)
+      this.groupChats = ipcRenderer.sendSync('queryGroupChats', data.group_id)
       this.groupMembers = members
       console.log('members: ', this.groupMembers)
+      console.log('groupChats: ', this.groupChats)
     })
     eventBus.$on('toInfo', (data) => {
       this.toInfo = true
@@ -238,15 +260,16 @@ export default {
         //图片下载下来后，生成dataUrl存在消息体中，接着保存
         ipcRenderer.invoke('downLoadOss', [1, arg.toString()]).then((data) => {
           temp.message = data.toString()
-          ipcRenderer.invoke('saveChat', JSON.stringify(temp)).then((result) => {
+          ipcRenderer.invoke('saveChat', JSON.stringify(temp)).then(() => {
+            console.log('type: ', temp.type)
             if (temp.type === 'SINGLE') {
               this.chats.push(temp)
             } else {
+              console.log('groupChats: ', this.groupChats)
               this.groupChats.push(temp)
             }
           })
         })
-
       })
       //图片下载下来后，生成dataUrl存在消息体中，接着保存
       // ipcRenderer.on('dataUrl', ((event,arg) => {
@@ -258,6 +281,14 @@ export default {
       this.db = this.$store.getters.getDB
       this._day = dayjs
     },
+    showMenu(event) {
+      event.preventDefault()
+      let x = event.clientX
+      let y = event.clientY
+      this.contextMenudata.axis = {
+        x, y
+      }
+    },
     //获取群成员头像
     getGroupMemberAvatar(lcid) {
       let member = this.groupMembers.find(member => member.lcid === lcid)
@@ -265,7 +296,7 @@ export default {
       return member.avatar
     },
     //获取群成员名称
-    getGroupMemberName(lcid){
+    getGroupMemberName(lcid) {
       let member = this.groupMembers.find(member => member.lcid === lcid)
       console.log('member: ', member)
       return member.username
@@ -348,43 +379,40 @@ export default {
         }, 2500)
       } else {
         let message = event.target.innerText
-        console.log('message: ' + message)
         if (message.length > 0) {
           let segment = {}
           segment.msgSeq = new Date().getTime()
           segment.from = this.userInfo.lcid
-          segment.to = this.leftUserInfo.lcid
+          segment.to = this.click === 2 ? this.groupInfo.group_id : this.leftUserInfo.lcid
           segment.message = message
+          //判断是单聊还是群聊
           segment.msgType = 'TEXT'
-          segment.type = 'SINGLE'
-          console.log(segment)
+          segment.type = this.click === 2 ? 'GROUP' : 'SINGLE'
           ipcRenderer.send('sendMsg', JSON.stringify(segment) + '\n')
           ipcRenderer.invoke('saveChat', JSON.stringify(segment))
-          this.chats.push(segment)
+          this.click === 2 ? this.groupChats.push(segment) : this.chats.push(segment)
         }
         for (let i = 0; i < this.pasteUrls.length; i++) {
-          console.log(this.pasteUrls)
           let dataUrl = this.pasteUrls[i].thumbnail
           let base64 = dataUrl.replace('data:image/png;base64,', '')
           let size = this.pasteUrls[i].size
           let filename = 'LChat-' + this.userInfo.userName + '-' + new Date().getTime() + '-' + size.width + '-' + size.height + '-' + this.leftUserInfo.username
           let success = image.imageToFile(base64, filename)
           success.then((data) => {
-            console.log('success: ', data)
             if (data) {
               let segment = {}
               segment.msgSeq = new Date().getTime()
               segment.from = this.userInfo.lcid
-              segment.to = this.leftUserInfo.lcid
+              segment.to = this.click === 2 ? this.groupInfo.group_id : this.leftUserInfo.lcid
               segment.message = filename
               segment.msgType = 'IMAGE'
-              segment.type = 'SINGLE'
-              console.log(segment)
+              //判断是单聊还是群聊
+              segment.type = this.click === 2 ? 'GROUP' : 'SINGLE'
               ipcRenderer.send('sendMsg', JSON.stringify(segment) + '\n')
               segment.message = size.width + '_' + size.height + '_' + dataUrl
               segment.method = 'image'
               ipcRenderer.invoke('saveChat', JSON.stringify(segment))
-              this.chats.push(segment)
+              this.click === 2 ? this.groupChats.push(segment) : this.chats.push(segment)
             }
           })
         }

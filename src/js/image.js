@@ -7,8 +7,8 @@ let client = new OSS({
     // yourregion填写Bucket所在地域。以华东1（杭州）为例，Region填写为oss-cn-hangzhou。
     region: 'oss-cn-shenzhen',
     // 阿里云账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM用户进行API访问或日常运维，请登录RAM控制台创建RAM用户。
-    accessKeyId: 'LTAI5tNZL22f5adNW1D5Fnq8',
-    accessKeySecret: 'BV1RqiggdmXcROb06G1hRMKHu8yGeM',
+    accessKeyId: 'LTAI5tCLSCKtuR5ch1C5fMUb',
+    accessKeySecret: 'uNvzLP0BRc7K8HtydT7HIt4oVBZI61',
     // 填写Bucket名称。
     bucket: 'lchat-server',
 });
@@ -45,11 +45,11 @@ export default {
             fs.mkdir('receiveImage',{ recursive: true }, (err) => {
                 if (err) throw err;
             });
-            let path = 'receiveImage\\' + filename.split('/')[1]
+            let localPath = 'receiveImage'+ path.sep + filename.split('/')[1]
             // 填写Object完整路径和本地文件的完整路径。Object完整路径中不能包含Bucket名称。
             // 如果指定的本地文件存在会覆盖，不存在则新建。
             // 如果未指定本地路径，则下载后的文件默认保存到示例程序所属项目对应本地路径中。
-            return client.get(filename, path)
+            return client.get(filename, localPath)
         } catch (e) {
             console.log(e);
         }

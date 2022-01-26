@@ -1,5 +1,3 @@
-
-
 const getSessionSql = `
 SELECT
  MAX( msgSeq ) AS msgSeq,lcid,message,msgType
@@ -30,8 +28,13 @@ FROM
  ) as temp GROUP BY lcid
 `
 
+const getGroupMessageSql = `SELECT * from lchat_message WHERE "to" = '?'`
+
 export default {
-    getSession(userId){
-        return getSessionSql.replaceAll('?',userId)
+    getSession(userId) {
+        return getSessionSql.replaceAll('?', userId)
+    },
+    groupMessageSql(groupId) {
+        return getGroupMessageSql.replaceAll('?', groupId)
     }
 }

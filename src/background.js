@@ -1,5 +1,6 @@
 import {app, BrowserWindow, dialog, ipcMain, Menu, protocol} from 'electron'
 import net from 'net'
+import path from 'path'
 import {sqliteDB} from './js/db'
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer'
 import image from "./js/image";
@@ -100,7 +101,7 @@ ipcMain.on('queryFriend', () => {
         win.webContents.send('friendsInfo', data)
     }))
 })
-ipcMain.on('queryChats', (event, arg) => {
+ipcMain.on('querySingleChats', (event, arg) => {
     let querySql = `
       SELECT
         * 
@@ -118,6 +119,15 @@ ipcMain.on('queryChats', (event, arg) => {
         win.webContents.send('chats', data)
     }))
 })
+
+ipcMain.on('queryGroupChats',((event, args) => {
+    let query_sql = sql.groupMessageSql(args)
+    console.log(query_sql)
+    db.queryData(query_sql, ((data) => {
+        event.returnValue = data
+    }))
+}))
+
 ipcMain.on('logout', (event, arg) => {
     win.setMaximumSize(500, 300)
     win.setSize(500, 300)
@@ -143,7 +153,6 @@ ipcMain.handle('updateGroup',((event, args) => {
 
 ipcMain.on('queryGroupMembers',(((event, args) => {
     let sql = `select group_member_lcid as lcid,username,avatar from lchat_group_member where group_id = '`+args.toString()+ `'`
-    console.log(sql)
     db.queryData(sql,((data) => {
         event.returnValue = data
     }))
@@ -176,7 +185,7 @@ async function dowLoadImage(message) {
         let msgArray = message.split('-')
         let size = {width: msgArray[3], height: msgArray[4]}
         let name = message.split('/')[1]
-        let localFilePath = process.cwd() + '\\receiveImage\\' + name
+        let localFilePath = process.cwd() + path.sep  + 'receiveImage' + path.sep + name
         console.log('localFilePath: ', localFilePath)
         let image = nativeImage.createFromPath(localFilePath)
         let dataUrl = image.toDataURL()
